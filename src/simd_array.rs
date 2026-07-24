@@ -4,7 +4,7 @@ use std::ops::{Index, IndexMut};
 // use std::hash::Hash;
 
 // This is unfortunately needed to avoid generic const expr or excessive bounding issues. TODO: Come up with better solution.
-pub trait Array<T>:
+pub trait SimdToArray<T>:
     Clone +
     Debug +
     // PartialEq +
@@ -89,7 +89,7 @@ pub trait Array<T>:
     fn as_mut_ptr(&mut self) -> *mut T { self.as_mut_slice().as_mut_ptr() }
 }
 
-impl<const N: usize, T> Array<T> for [T; N]
+impl<const N: usize, T> SimdToArray<T> for [T; N]
 where
     T: Clone + Debug,
 {

@@ -4,7 +4,7 @@ use std::ops::{Deref, DerefMut};
 
 use crate::StaticArch;
 use crate::architectures::interface::*;
-use crate::simd_array::Array;
+use crate::simd_array::SimdToArray;
 use crate::register::Simd;
 use crate::simd_types::*;
 

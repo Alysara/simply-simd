@@ -1,7 +1,7 @@
 #![allow(clippy::missing_safety_doc)]
 use std::{fmt::Debug, ops::{Index, IndexMut}};
 
-use crate::{Architecture, SimdElement, simd_array::Array, register::Simd};
+use crate::{Architecture, SimdElement, simd_array::SimdToArray, register::Simd};
 
 pub trait Arch: Clone + Copy + Default {
     const SIMD_WIDTH: usize;
@@ -19,10 +19,10 @@ pub trait Arch: Clone + Copy + Default {
     type Mask: MaskArch + Copy + Clone + SimdVariableBlendImpl<VecType = Self::Vec>;
     type ScalarArch: Arch;
 
-    type Array64<T: Debug + Copy>: Debug + Copy + Array<T>;
-    type Array32<T: Debug + Copy>: Debug + Copy + Array<T>;
-    type Array16<T: Debug + Copy>: Debug + Copy + Array<T>;
-    type Array8<T: Debug + Copy>: Debug + Copy + Array<T>;
+    type Array64<T: Debug + Copy>: Debug + Copy + SimdToArray<T>;
+    type Array32<T: Debug + Copy>: Debug + Copy + SimdToArray<T>;
+    type Array16<T: Debug + Copy>: Debug + Copy + SimdToArray<T>;
+    type Array8<T: Debug + Copy>: Debug + Copy + SimdToArray<T>;
 }
 
 pub trait SimdArch:

@@ -6,7 +6,7 @@ use num_traits::NumCast;
 
 use crate::SimdElement;
 use crate::architectures::interface::*;
-use crate::simd_array::Array;
+use crate::simd_array::SimdToArray;
 use crate::mask::Mask;
 use crate::register::Simd;
 use crate::simd_types::{B32, B64, BitSize, SimdType};

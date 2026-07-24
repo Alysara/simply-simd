@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use num_traits::{NumCast, NumOps};
 
 use crate::architectures::interface::Arch;
-use crate::simd_array::Array;
+use crate::simd_array::SimdToArray;
 
 mod private {
     pub trait SealedTypes {}
@@ -171,7 +171,7 @@ pub trait SimdElement:
     const PRIMITIVE_TYPE: PrimitiveType;
     const TYPE: SimdType;
     type BitWidthType: BitWidth;
-    type Array<F: Arch>: Debug + Copy + Array<Self>; // Array wrapper to get around const generics limitations.
+    type Array<F: Arch>: Debug + Copy + SimdToArray<Self>; // Array wrapper to get around const generics limitations.
     type UType: SimdElement;
 }
 

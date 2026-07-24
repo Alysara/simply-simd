@@ -5,7 +5,7 @@ pub mod simd_utils {
 
 use simply_simd::{StaticSimd, ScalarSimd, StaticArch, ScalarArch};
 use simply_simd::architectures::interface::*;
-use simply_simd::simd_array::Array;
+use simply_simd::SimdToArray;
 use simply_simd::register::Simd;
 
 // === Basic ===
