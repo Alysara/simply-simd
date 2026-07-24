@@ -1,0 +1,33 @@
+[workspace]
+resolver = "3"
+members = [".", "macros"]
+
+[package]
+name = "simply-simd"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/Alysara/simply-simd"
+keywords = ["simd", "performance"]
+categories = ["game-engines"]
+readme = "README.md"
+description = "No-boilerplate portable SIMD rust library for raw registers with runtime feature detection"
+rust-version = "1.95"
+
+[profile.release]
+opt-level = 3
+debug = "line-tables-only"
+strip = false
+
+[profile.bench]
+opt-level = 3
+debug = "line-tables-only"
+strip = false
+
+[dependencies]
+num-traits = "0.2.19"
+itertools = "0.14.0"
+simply-simd-macros = { path = "macros", version = "0.1.0" }
+
+[dev-dependencies]
+paste = "1.0.15"
