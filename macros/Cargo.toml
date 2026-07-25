@@ -6,7 +6,6 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/Alysara/simply-simd"
 keywords = ["simd", "performance"]
 categories = ["game-engines"]
-readme = "README.md"
 description = "Proc-macros for runtime simd feature detection. Used in the simply-simd crate."
 rust-version = "1.95"
 
