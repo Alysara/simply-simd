@@ -1,4 +1,10 @@
-No-boilerplate portable SIMD rust library for raw registers with runtime feature detection 
+[![Crates.io](https://img.shields.io/crates/v/simply-simd.svg)](https://crates.io/crates/simply-simd)
+[![Documentation](https://img.shields.io/docsrs/simply-simd)](https://docs.rs/simply-simd)
+[![License](https://img.shields.io/crates/l/simply-simd.svg)](https://github.com/Alysara/simply-simd#license)
+[![Build Status](https://github.com/Alysara/simply-simd/actions/workflows/rust.yml/badge.svg)](https://github.com/Alysara/simply-simd/actions/workflows/rust.yml)
+[![MSRV](https://img.shields.io/badge/MSRV-1.95-orange.svg)](https://www.rust-lang.org)
+
+No-boilerplate portable SIMD rust library for raw registers with runtime feature detection.
 
 # Usage
 
@@ -114,12 +120,59 @@ use the dispatched target. This limitation applies to all SIMD libraries.
 
 ## Variable Lanes
 
-Unlike std::simd, it does not use a fixed width and instead operates
-in the largest supported lane count.
+Unlike std::simd, simply-simd does not use a fixed width and instead operates
+in the largest supported lane count directly.
 
-<!-- ```rust -->
-<!-- use simple_simd::StaticSimd; -->
-<!---->
-<!-- for  -->
-<!-- ``` -->
-<!---->
+```rust
+use simple_simd::StaticSimd;
+
+let array: [0.0; 1024] = std::array::from_fn(|i| i as f32);
+let mut result = [0.0; 1024];
+
+for i in (0..1024).step_by(StaticSimd::<f32>::LANES) {
+    let values = StaticSimd::copy_from_slice(array[i..]);
+    let new_values = values * StaticSimd::splat(100.0);
+
+    new_vales.copy_to_slice(result.as_mut_slice());
+}
+```
+
+## Simd Iters
+
+Iterators are also provided that operate directly on simd registers. They also automatically
+handle the tail, letting you keep your logic in one place.
+
+```rust
+use simple_simd::{StaticSimd, SimdSliceIterExt};
+
+let array: [0.0; 1024] = std::array::from_fn(|i| i as f32);
+
+let result: [f32; 1024] = array
+    .as_slice()
+    .simd_iter()
+    .for_each(|x| x * StaticSimd::splat(100.0))
+    .collect();
+```
+
+## Masks
+
+Masks are also provided using the same structure as Simd.
+
+```rust
+let mask1 = StaticMask::<f32>::splat(true);
+let mask2 = StaticMask::<f32>::first_n_true(3);
+
+let val1 = StaticSimd::iota(1.0);
+let val2 = StaticSimd::iota(5.0);
+
+// Blends results of val1 and val2 depending on mask2.
+let new_val = mask2.select(val1, val2);
+
+```
+
+## Limitations
+
+Simply simd does not offer the full support of a complete SIMD library. It was created
+primarily for the quick-noise crate and still lacks the polish of a dedicated SIMD
+library. However, simply-simd can be more than enough for simple simd operations.
+
