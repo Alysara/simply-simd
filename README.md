@@ -4,7 +4,7 @@
 [![Build Status](https://github.com/Alysara/simply-simd/actions/workflows/rust.yml/badge.svg)](https://github.com/Alysara/simply-simd/actions/workflows/rust.yml)
 [![MSRV](https://img.shields.io/badge/MSRV-1.95-orange.svg)](https://www.rust-lang.org)
 
-No-boilerplate portable SIMD rust library for raw registers with runtime feature detection.
+No-boilerplate portable SIMD Rust library for raw registers with runtime feature detection.
 
 # Usage
 

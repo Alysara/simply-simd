@@ -11,7 +11,7 @@ repository = "https://github.com/Alysara/simply-simd"
 keywords = ["simd", "performance"]
 categories = ["game-engines"]
 readme = "README.md"
-description = "No-boilerplate portable SIMD rust library for raw registers with runtime feature detection"
+description = "No-boilerplate portable SIMD library for raw registers with runtime feature detection"
 rust-version = "1.95"
 
 [profile.release]

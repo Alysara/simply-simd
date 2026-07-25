@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
 
-//! No-boilerplate portable SIMD rust library for raw registers with runtime feature detection
+//! No-boilerplate portable SIMD library for raw registers with runtime feature detection
 
 pub mod architectures;
 mod dispatch;
