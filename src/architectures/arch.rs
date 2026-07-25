@@ -1,17 +1,18 @@
 #[cfg(target_arch = "x86_64")]
 use crate::{Architecture, SimdElement};
-use crate::architectures::interface::Arch;
 
 #[cfg(target_arch = "x86_64")]
 use crate::architectures::intrinsics::avx2::Avx2Reg;
 #[cfg(target_arch = "x86_64")]
-use crate::architectures::intrinsics::avx512::{Avx512Reg, Avx512Mask};
-#[cfg(target_arch = "x86_64")]
-use crate::architectures::intrinsics::sse::SseReg;
+use crate::architectures::intrinsics::avx512::{Avx512Mask, Avx512Reg};
 #[cfg(target_arch = "aarch64")]
 use crate::architectures::intrinsics::neon::NeonReg;
+#[cfg(target_arch = "x86_64")]
+use crate::architectures::intrinsics::sse::SseReg;
 
-use crate::architectures::intrinsics::scalar::{ScalarReg, ScalarMask};
+use crate::architectures::interface::Arch;
+use crate::architectures::intrinsics::scalar::{ScalarMask, ScalarReg};
+
 #[cfg(target_arch = "x86_64")]
 use crate::register::Simd;
 use std::fmt::Debug;
@@ -143,7 +144,9 @@ pub struct Scalar512;
 impl Arch for Scalar512 {
     const SIMD_WIDTH: usize = 64;
     const NUM_SIMD_REG: usize = 16;
-    const ARCHITECTURE: Architecture = Architecture::Scalar128; type Block2<T: SimdElement> = [Simd<T, Self>; 4]; type Block4<T: SimdElement> = [Simd<T, Self>; 2];
+    const ARCHITECTURE: Architecture = Architecture::Scalar128;
+    type Block2<T: SimdElement> = [Simd<T, Self>; 4];
+    type Block4<T: SimdElement> = [Simd<T, Self>; 2];
 
     type Vec = ScalarReg<64>;
     type Mask = ScalarMask<64>;
