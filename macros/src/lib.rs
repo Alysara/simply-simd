@@ -32,6 +32,16 @@ pub fn enable_targets(args: TokenStream, item: TokenStream) -> TokenStream {
 }
 
 pub(crate) fn quick_noise_path() -> TokenStream2 {
+    // Handle if it's quick-noise submodule
+    match crate_name("quick-noise") {
+        Ok(FoundCrate::Itself) => return quote! { ::quick_noise::simd },
+        Ok(FoundCrate::Name(name)) => {
+            let ident = Ident::new(&name, Span::call_site());
+            return quote! { ::#ident::simd }
+        }
+        _ => {}
+    }
+
     match crate_name("simply-simd") {
         Ok(FoundCrate::Itself) => quote! { simply_simd },
         Ok(FoundCrate::Name(name)) => {
