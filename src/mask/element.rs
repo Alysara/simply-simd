@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 use std::ops::*;
 
-use crate::architectures::interface::{SimdAllBitsImpl, Arch, *};
+use crate::architectures::interface::{Arch, SimdAllBitsImpl, *};
 use crate::mask::Mask;
 use crate::register::Simd;
 use crate::simd_types::*;
@@ -19,6 +19,7 @@ impl<T: SimdElement, F: Arch> Mask<T, F> {
     pub fn raw_cast<S: SimdElement>(self) -> Mask<S, F> {
         Mask::new(self.data)
     }
+
 
     #[inline(always)]
     pub fn all_false(self) -> bool {
