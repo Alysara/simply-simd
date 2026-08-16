@@ -829,7 +829,7 @@ impl<const N: usize> SimdSqrtImpl for ScalarReg<N> {
 impl<const N: usize> SimdAllBitsImpl for ScalarMask<N> {
     #[inline(always)]
     unsafe fn all_zero(self) -> bool {
-        self.0.iter().any(|&x| !x)
+        !self.0.iter().any(|&x| x)
     }
 }
 

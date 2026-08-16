@@ -3,10 +3,10 @@ pub mod simd_utils {
     pub mod macros;
 }
 
-use simply_simd::{StaticSimd, ScalarSimd, StaticArch, ScalarArch};
-use simply_simd::architectures::interface::*;
 use simply_simd::SimdToArray;
+use simply_simd::architectures::interface::*;
 use simply_simd::register::Simd;
+use simply_simd::{ScalarArch, ScalarSimd, StaticArch, StaticSimd};
 
 // === Basic ===
 simd_vec_tests!(
@@ -96,10 +96,9 @@ simd_vec_tests!(neq_test, [f32, f64, u32, u64, i32, i64], |x, y| {
 
 simd_vec_tests!(float_int_cast_test, [[i32 -> f32]], |x| { x.cast_float() });
 // TODO: Add mask tester.
-// TODO: Add correct implementation for all_zero.
-// simd_vec_tests!(all_false_test, [f32, f64], |x, y| {
-//     if x.simd_gt(y).all_false() { x } else { y }
-// });
+simd_vec_tests!(all_false_test, [f32, f64], |x, y| {
+    if x.simd_gt(y).all_false() { x } else { y }
+});
 
 simd_vec_tests!(and_mask_test, [f32, f64], |x, y, z| {
     (x.simd_gt(y) & y.simd_gt(z)).select(y, z)
