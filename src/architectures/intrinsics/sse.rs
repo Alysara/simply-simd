@@ -660,7 +660,7 @@ impl SimdSqrtImpl for SseReg {
 impl SimdAllBitsImpl for SseReg {
     #[inline(always)]
     unsafe fn all_zero(self) -> bool {
-        execute_intrinsic!(_mm_testz_si128, self, self) == 0
+        execute_intrinsic!(_mm_testz_si128, self, self) != 0
     }
 }
 
