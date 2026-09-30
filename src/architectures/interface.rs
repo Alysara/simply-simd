@@ -7,8 +7,18 @@ pub trait Arch: Clone + Copy + Default {
     const SIMD_WIDTH: usize;
     const NUM_SIMD_REG: usize;
     const ARCHITECTURE: Architecture;
-    type Block2<T: SimdElement>: Index<usize, Output = Simd<T, Self>> + IndexMut<usize> + Default;
-    type Block4<T: SimdElement>: Index<usize, Output = Simd<T, Self>> + IndexMut<usize> + Default;
+
+    type Block2<T: SimdElement>: Index<usize, Output = Simd<T, Self>>
+        + IndexMut<usize>
+        + AsRef<[Simd<T, Self>]>
+        + AsMut<[Simd<T, Self>]>
+        + Default;
+
+    type Block4<T: SimdElement>: Index<usize, Output = Simd<T, Self>>
+        + IndexMut<usize>
+        + AsRef<[Simd<T, Self>]>
+        + AsMut<[Simd<T, Self>]>
+        + Default;
 
     type Vec: SimdArch
         + Copy
