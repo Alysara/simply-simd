@@ -4,7 +4,7 @@ use crate::architectures::interface::*;
 use crate::register::Simd;
 use crate::simd_types::*;
 
-impl<T: SimdFloat, F: Arch> Simd<T, F> {
+impl<T: SimdFloat, A: Arch> Simd<T, A> {
     #[inline(always)]
     pub fn floor(self) -> Self {
         unsafe {
@@ -90,23 +90,23 @@ impl<T: SimdFloat, F: Arch> Simd<T, F> {
     // === Casts ===
 
     #[inline(always)]
-    pub fn cast_int_trunc(self) -> Simd<T::Signed, F> {
+    pub fn cast_int_trunc(self) -> Simd<T::Signed, A> {
         unsafe { Simd::new(self.data.float_to_int_trunc()) }
     }
 
     #[inline(always)]
-    pub fn cast_int_round(self) -> Simd<T::Signed, F> {
+    pub fn cast_int_round(self) -> Simd<T::Signed, A> {
         unsafe { Simd::new(self.data.float_to_int_round()) }
     }
 
     // TODO: INCORRECT for edge cases.
     #[inline(always)]
-    pub fn cast_uint_trunc(self) -> Simd<T::Unsigned, F> {
+    pub fn cast_uint_trunc(self) -> Simd<T::Unsigned, A> {
         unsafe { Simd::new(self.data.float_to_int_trunc()) }
     }
 
     #[inline(always)]
-    pub fn cast_uint_round(self) -> Simd<T::Unsigned, F> {
+    pub fn cast_uint_round(self) -> Simd<T::Unsigned, A> {
         unsafe { Simd::new(self.data.float_to_int_round()) }
     }
 
@@ -141,10 +141,10 @@ impl<T: SimdFloat, F: Arch> Simd<T, F> {
     pub fn abs(self) -> Self {
         unsafe {
             Self::new(match T::TYPE {
-                SimdType::F64 => Simd::<u64, F>::splat(T::SIGN_MASK as u64)
+                SimdType::F64 => Simd::<u64, A>::splat(T::SIGN_MASK as u64)
                     .data
                     .and(self.data),
-                SimdType::F32 => Simd::<u32, F>::splat(T::SIGN_MASK as u32)
+                SimdType::F32 => Simd::<u32, A>::splat(T::SIGN_MASK as u32)
                     .data
                     .and(self.data),
                 _ => unreachable!(),

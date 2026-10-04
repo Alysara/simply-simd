@@ -11,9 +11,9 @@ use crate::mask::Mask;
 use crate::register::Simd;
 use crate::simd_types::{B32, B64, BitSize, SimdType};
 
-impl<T: SimdElement, F: Arch> Simd<T, F> {
+impl<T: SimdElement, A: Arch> Simd<T, A> {
     #[inline(always)]
-    pub(crate) fn new(data: F::Vec) -> Self {
+    pub(crate) fn new(data: A::Vec) -> Self {
         Self {
             data,
             _marker: PhantomData,
@@ -22,7 +22,7 @@ impl<T: SimdElement, F: Arch> Simd<T, F> {
 
     #[inline(always)]
     pub fn zero() -> Self {
-        unsafe { Self::new(F::Vec::zero()) }
+        unsafe { Self::new(A::Vec::zero()) }
     }
 
     #[inline(always)]
@@ -30,7 +30,7 @@ impl<T: SimdElement, F: Arch> Simd<T, F> {
         let ptr = slice.as_ptr();
         assert!(ptr.align_offset(Self::SIMD_WIDTH) == 0);
         assert!(slice.len() >= Self::LANES);
-        unsafe { Self::new(F::Vec::load_aligned(ptr)) }
+        unsafe { Self::new(A::Vec::load_aligned(ptr)) }
     }
 
     /// # Safety
@@ -40,13 +40,13 @@ impl<T: SimdElement, F: Arch> Simd<T, F> {
         let ptr = slice.as_ptr();
         debug_assert!(ptr.align_offset(Self::SIMD_WIDTH) == 0);
         debug_assert!(slice.len() >= Self::LANES);
-        unsafe { Self::new(F::Vec::load_aligned(ptr)) }
+        unsafe { Self::new(A::Vec::load_aligned(ptr)) }
     }
 
     #[inline(always)]
     pub fn from_slice(slice: &[T]) -> Self {
         if slice.len() >= Self::LANES {
-            unsafe { Self::new(F::Vec::load_unaligned(slice.as_ptr())) }
+            unsafe { Self::new(A::Vec::load_unaligned(slice.as_ptr())) }
         } else {
             let mut array = Self::zero().to_array();
             for (arr, val) in array.iter_mut().zip(slice.iter()) {
@@ -66,7 +66,7 @@ impl<T: SimdElement, F: Arch> Simd<T, F> {
         unsafe {
             let offset = Self::LANES - slice.len();
             let raw_ptr = slice.as_ptr().sub(offset);
-            let simd = Self::new(F::Vec::load_unaligned(raw_ptr));
+            let simd = Self::new(A::Vec::load_unaligned(raw_ptr));
             simd.left_lane_shift(offset as u32)
         }
     }
@@ -76,7 +76,7 @@ impl<T: SimdElement, F: Arch> Simd<T, F> {
     #[inline(always)]
     pub unsafe fn from_slice_unchecked(slice: &[T]) -> Self {
         debug_assert!(slice.len() >= Self::LANES);
-        unsafe { Self::new(F::Vec::load_unaligned(slice.as_ptr())) }
+        unsafe { Self::new(A::Vec::load_unaligned(slice.as_ptr())) }
     }
 
     #[inline(always)]
@@ -128,8 +128,8 @@ impl<T: SimdElement, F: Arch> Simd<T, F> {
     /// TODO
     /// use simply_simd::
     #[inline(always)]
-    pub fn to_array(self) -> T::Array<F> {
-        let mut array = T::Array::<F>::from_fn(|_| T::from(0).unwrap());
+    pub fn to_array(self) -> T::Array<A> {
+        let mut array = T::Array::<A>::from_fn(|_| T::from(0).unwrap());
         self.copy_to_slice(array.as_mut_slice());
         array
     }
@@ -137,12 +137,12 @@ impl<T: SimdElement, F: Arch> Simd<T, F> {
     #[inline(always)]
     pub fn iota(offset: T) -> Self {
         let iota_array =
-            T::Array::<F>::from_fn(|i| <T as NumCast>::from(i).unwrap().safe_add(offset));
+            T::Array::<A>::from_fn(|i| <T as NumCast>::from(i).unwrap().safe_add(offset));
         Self::from_slice(iota_array.as_slice())
     }
 }
 
-impl<T: SimdElement, F: Arch> fmt::Debug for Simd<T, F> {
+impl<T: SimdElement, A: Arch> fmt::Debug for Simd<T, A> {
     #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let buf = self.to_array();
@@ -151,7 +151,7 @@ impl<T: SimdElement, F: Arch> fmt::Debug for Simd<T, F> {
 }
 
 // === Assign operations ===
-impl<T: SimdElement, F: Arch> AddAssign for Simd<T, F>
+impl<T: SimdElement, A: Arch> AddAssign for Simd<T, A>
 where
     Self: Add<Output = Self> + Copy,
 {
@@ -161,7 +161,7 @@ where
     }
 }
 
-impl<T: SimdElement, F: Arch> SubAssign for Simd<T, F>
+impl<T: SimdElement, A: Arch> SubAssign for Simd<T, A>
 where
     Self: Sub<Output = Self> + Copy,
 {
@@ -171,7 +171,7 @@ where
     }
 }
 
-impl<T: SimdElement, F: Arch> MulAssign for Simd<T, F>
+impl<T: SimdElement, A: Arch> MulAssign for Simd<T, A>
 where
     Self: Mul<Output = Self> + Copy,
 {
@@ -181,7 +181,7 @@ where
     }
 }
 
-impl<T: SimdElement, F: Arch> DivAssign for Simd<T, F>
+impl<T: SimdElement, A: Arch> DivAssign for Simd<T, A>
 where
     Self: Div<Output = Self> + Copy,
 {
@@ -191,7 +191,7 @@ where
     }
 }
 
-impl<T: SimdElement, F: Arch> RemAssign for Simd<T, F>
+impl<T: SimdElement, A: Arch> RemAssign for Simd<T, A>
 where
     Self: Rem<Output = Self> + Copy,
 {
@@ -201,7 +201,7 @@ where
     }
 }
 
-impl<T: SimdElement, F: Arch> BitAndAssign for Simd<T, F>
+impl<T: SimdElement, A: Arch> BitAndAssign for Simd<T, A>
 where
     Self: BitAnd<Output = Self> + Copy,
 {
@@ -211,7 +211,7 @@ where
     }
 }
 
-impl<T: SimdElement, F: Arch> BitOrAssign for Simd<T, F>
+impl<T: SimdElement, A: Arch> BitOrAssign for Simd<T, A>
 where
     Self: BitOr<Output = Self> + Copy,
 {
@@ -221,7 +221,7 @@ where
     }
 }
 
-impl<T: SimdElement, F: Arch> BitXorAssign for Simd<T, F>
+impl<T: SimdElement, A: Arch> BitXorAssign for Simd<T, A>
 where
     Self: BitXor<Output = Self> + Copy,
 {
@@ -231,7 +231,7 @@ where
     }
 }
 
-impl<T: SimdElement, F: Arch> Neg for Simd<T, F> {
+impl<T: SimdElement, A: Arch> Neg for Simd<T, A> {
     type Output = Self;
     #[inline(always)]
     fn neg(self) -> Self {
@@ -239,21 +239,21 @@ impl<T: SimdElement, F: Arch> Neg for Simd<T, F> {
     }
 }
 
-impl<T: SimdElement, F: Arch> Simd<T, F> {
+impl<T: SimdElement, A: Arch> Simd<T, A> {
     #[inline(always)]
-    pub fn raw_cast<S: SimdElement>(self) -> Simd<S, F> {
+    pub fn raw_cast<S: SimdElement>(self) -> Simd<S, A> {
         Simd::new(self.data)
     }
 }
 
-impl<T: SimdElement, F: Arch> Default for Simd<T, F> {
+impl<T: SimdElement, A: Arch> Default for Simd<T, A> {
     #[inline(always)]
     fn default() -> Self {
         Self::splat(<T as NumCast>::from(T::default()).unwrap())
     }
 }
 
-impl<T: SimdElement, F: Arch> Add for Simd<T, F> {
+impl<T: SimdElement, A: Arch> Add for Simd<T, A> {
     type Output = Self;
     #[inline(always)]
     fn add(self, rhs: Self) -> Self {
@@ -274,7 +274,7 @@ impl<T: SimdElement, F: Arch> Add for Simd<T, F> {
     }
 }
 
-impl<T: SimdElement, F: Arch> Sub for Simd<T, F> {
+impl<T: SimdElement, A: Arch> Sub for Simd<T, A> {
     type Output = Self;
     #[inline(always)]
     fn sub(self, rhs: Self) -> Self {
@@ -296,7 +296,7 @@ impl<T: SimdElement, F: Arch> Sub for Simd<T, F> {
 }
 
 
-impl<T: SimdElement, F: Arch> Simd<T, F> {
+impl<T: SimdElement, A: Arch> Simd<T, A> {
     /// Clamps the values in a register between two bounds, inclusive.
     ///
     /// # Parameters:
@@ -332,27 +332,27 @@ impl<T: SimdElement, F: Arch> Simd<T, F> {
     }
 }
 
-impl<T: SimdElement, F: Arch> Simd<T, F> {
+impl<T: SimdElement, A: Arch> Simd<T, A> {
     /// Broadcasts a value across the entire register.
     #[inline(always)]
     pub fn splat(val: T) -> Self {
         unsafe {
             Self::new(match T::BIT_SIZE {
-                BitSize::Size64 => F::Vec::splat_64(val),
-                BitSize::Size32 => F::Vec::splat_32(val),
-                BitSize::Size16 => F::Vec::splat_16(val),
-                BitSize::Size8 => F::Vec::splat_8(val),
+                BitSize::Size64 => A::Vec::splat_64(val),
+                BitSize::Size32 => A::Vec::splat_32(val),
+                BitSize::Size16 => A::Vec::splat_16(val),
+                BitSize::Size8 => A::Vec::splat_8(val),
             })
         }
     }
 
     /// Loads a register according to a mask.
     #[inline(always)]
-    pub fn masked_load(slice: &[T], mask: Mask<T, F>) -> Self {
+    pub fn masked_load(slice: &[T], mask: Mask<T, A>) -> Self {
         unsafe {
             Self::new(match T::BIT_SIZE {
-                BitSize::Size64 => F::Vec::masked_load_64(slice.as_ptr(), mask.data),
-                BitSize::Size32 => F::Vec::masked_load_32(slice.as_ptr(), mask.data),
+                BitSize::Size64 => A::Vec::masked_load_64(slice.as_ptr(), mask.data),
+                BitSize::Size32 => A::Vec::masked_load_32(slice.as_ptr(), mask.data),
                 _ => unreachable!(),
             })
         }
@@ -379,16 +379,16 @@ impl<T: SimdElement, F: Arch> Simd<T, F> {
 
     /// Stores the register using a given mask.
     #[inline(always)]
-    pub fn masked_store(self, slice: &mut [T], mask: Mask<T, F>) {
+    pub fn masked_store(self, slice: &mut [T], mask: Mask<T, A>) {
         unsafe {
             match T::BIT_SIZE {
                 BitSize::Size64 => {
-                    F::Vec::masked_store_64(self.data, slice.as_mut_ptr(), mask.data)
+                    A::Vec::masked_store_64(self.data, slice.as_mut_ptr(), mask.data)
                 }
                 BitSize::Size32 => {
-                    F::Vec::masked_store_32(self.data, slice.as_mut_ptr(), mask.data)
+                    A::Vec::masked_store_32(self.data, slice.as_mut_ptr(), mask.data)
                 }
-                _ => unreachable!(), // TODO: ADD SUPPORT FOR OTHER SIZES!!!
+                _ => unreachable!(), // TODO: ADD SUPPORT AOR OTHER SIZES!!!
             }
         }
     }
@@ -413,7 +413,7 @@ impl<T: SimdElement, F: Arch> Simd<T, F> {
     }
 
     #[inline(always)]
-    pub fn simd_eq(self, rhs: Self) -> Mask<T, F> {
+    pub fn simd_eq(self, rhs: Self) -> Mask<T, A> {
         unsafe {
             Mask::new(match T::TYPE {
                 SimdType::F64 => self.data.cmp_f64_eq(rhs.data),
@@ -432,7 +432,7 @@ impl<T: SimdElement, F: Arch> Simd<T, F> {
     }
 
     #[inline(always)]
-    pub fn simd_neq(self, rhs: Self) -> Mask<T, F> {
+    pub fn simd_neq(self, rhs: Self) -> Mask<T, A> {
         unsafe {
             Mask::new(match T::TYPE {
                 SimdType::F64 => self.data.cmp_f64_neq(rhs.data),
@@ -443,7 +443,7 @@ impl<T: SimdElement, F: Arch> Simd<T, F> {
     }
 
     #[inline(always)]
-    pub fn simd_gt(self, rhs: Self) -> Mask<T, F> {
+    pub fn simd_gt(self, rhs: Self) -> Mask<T, A> {
         unsafe {
             Mask::new(match T::TYPE {
                 SimdType::F64 => self.data.cmp_f64_gt(rhs.data),
@@ -461,9 +461,9 @@ impl<T: SimdElement, F: Arch> Simd<T, F> {
         }
     }
 
-    // TODO: Find better way to handle comparisons.
+    // TODO: Aind better way to handle comparisons.
     #[inline(always)]
-    pub fn simd_ge(self, rhs: Self) -> Mask<T, F> {
+    pub fn simd_ge(self, rhs: Self) -> Mask<T, A> {
         unsafe {
             Mask::new(match T::TYPE {
                 SimdType::F64 => self.data.cmp_f64_ge(rhs.data),
@@ -494,7 +494,7 @@ impl<T: SimdElement, F: Arch> Simd<T, F> {
     }
 
     #[inline(always)]
-    pub fn simd_lt(self, rhs: Self) -> Mask<T, F> {
+    pub fn simd_lt(self, rhs: Self) -> Mask<T, A> {
         unsafe {
             Mask::new(match T::TYPE {
                 SimdType::F64 => self.data.cmp_f64_lt(rhs.data),
@@ -505,7 +505,7 @@ impl<T: SimdElement, F: Arch> Simd<T, F> {
     }
 
     #[inline(always)]
-    pub fn simd_le(self, rhs: Self) -> Mask<T, F> {
+    pub fn simd_le(self, rhs: Self) -> Mask<T, A> {
         unsafe {
             Mask::new(match T::TYPE {
                 SimdType::F64 => self.data.cmp_f64_le(rhs.data),
@@ -549,35 +549,35 @@ impl<T: SimdElement, F: Arch> Simd<T, F> {
     }
 }
 
-impl<T: SimdElement + SimdElement<BitWidthType = B32>, F: Arch> Simd<T, F> {
+impl<T: SimdElement + SimdElement<BitWidthType = B32>, A: Arch> Simd<T, A> {
     #[inline(always)]
-    pub fn permute_32(self, indices: Simd<u32, F>) -> Self {
+    pub fn permute_32(self, indices: Simd<u32, A>) -> Self {
         unsafe { Self::new(self.data.permute_32(indices.data)) }
     }
 }
 
-impl<T: SimdElement, F: Arch> Simd<T, F> {
+impl<T: SimdElement, A: Arch> Simd<T, A> {
     #[inline(always)]
-    pub fn permute_8(self, indices: Simd<u8, F>) -> Self {
+    pub fn permute_8(self, indices: Simd<u8, A>) -> Self {
         unsafe { Self::new(self.data.permute_8(indices.data)) }
     }
 
     #[inline(always)]
     pub fn permute_8_pattern_32(self, indices: [u8; 4]) -> Self {
         let pattern = u32::from_ne_bytes(indices);
-        let pattern_vec = Simd::<u32, F>::splat(pattern);
+        let pattern_vec = Simd::<u32, A>::splat(pattern);
         unsafe { Self::new(self.data.permute_8(pattern_vec.data)) }
     }
 }
 
 // TODO: Super early version gather.
-impl<F: Arch> Simd<u32, F> {
+impl<A: Arch> Simd<u32, A> {
     pub fn gather<S: SimdElement + SimdElement<BitWidthType = B32>, const N: usize>(
         self,
         slice: &[S; N],
-    ) -> Simd<S, F> {
+    ) -> Simd<S, A> {
         if N <= Self::LANES {
-            let data = Simd::<S, F>::from_slice(&slice[..]);
+            let data = Simd::<S, A>::from_slice(&slice[..]);
             data.permute_32(self)
         } else {
             unsafe { Simd::new(self.data.gather_32_from_32::<S, 4>(slice.as_ptr())) }
@@ -585,17 +585,17 @@ impl<F: Arch> Simd<u32, F> {
     }
 }
 
-impl<F: Arch> Simd<u64, F> {
+impl<A: Arch> Simd<u64, A> {
     pub fn gather<S: SimdElement + SimdElement<BitWidthType = B64>, const N: usize>(
         self,
         slice: &[S; N],
-    ) -> Simd<S, F> {
+    ) -> Simd<S, A> {
         unsafe { Simd::new(self.data.gather_64_from_64::<S, 8>(slice.as_ptr())) }
     }
 }
 
 // TODO: Add other types of lane shifts.
-impl<T: SimdElement, F: Arch> Simd<T, F> {
+impl<T: SimdElement, A: Arch> Simd<T, A> {
     pub fn left_lane_shift(self, n: u32) -> Self {
         match T::BIT_SIZE {
             BitSize::Size32 => unsafe { Self::new(self.data.left_lane_shift_32(n)) },

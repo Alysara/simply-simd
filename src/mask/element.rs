@@ -6,9 +6,9 @@ use crate::mask::Mask;
 use crate::register::Simd;
 use crate::simd_types::*;
 
-impl<T: SimdElement, F: Arch> Mask<T, F> {
+impl<T: SimdElement, A: Arch> Mask<T, A> {
     #[inline(always)]
-    pub(crate) fn new(data: F::Mask) -> Self {
+    pub(crate) fn new(data: A::Mask) -> Self {
         Self {
             data,
             _marker: PhantomData,
@@ -16,7 +16,7 @@ impl<T: SimdElement, F: Arch> Mask<T, F> {
     }
 
     #[inline(always)]
-    pub fn raw_cast<S: SimdElement>(self) -> Mask<S, F> {
+    pub fn raw_cast<S: SimdElement>(self) -> Mask<S, A> {
         Mask::new(self.data)
     }
 
@@ -28,21 +28,21 @@ impl<T: SimdElement, F: Arch> Mask<T, F> {
 
     // TODO: Support other bit_sizes
     #[inline(always)]
-    pub fn first_n_true(n: u32) -> Mask<T, F> {
+    pub fn first_n_true(n: u32) -> Mask<T, A> {
         let iota = Simd::iota(0u32);
         let n_vec = Simd::splat(n);
         n_vec.simd_gt(iota).raw_cast()
     }
 
     #[inline(always)]
-    pub fn first_n_false(n: u32) -> Mask<T, F> {
+    pub fn first_n_false(n: u32) -> Mask<T, A> {
         let iota = Simd::iota(1u32);
         let n_vec = Simd::splat(n);
         iota.simd_gt(n_vec).raw_cast()
     }
 }
 
-impl<T: SimdElement, F: Arch> BitAnd for Mask<T, F> {
+impl<T: SimdElement, A: Arch> BitAnd for Mask<T, A> {
     type Output = Self;
     #[inline(always)]
     fn bitand(self, rhs: Self) -> Self {
@@ -50,7 +50,7 @@ impl<T: SimdElement, F: Arch> BitAnd for Mask<T, F> {
     }
 }
 
-impl<T: SimdElement, F: Arch> BitOr for Mask<T, F> {
+impl<T: SimdElement, A: Arch> BitOr for Mask<T, A> {
     type Output = Self;
     #[inline(always)]
     fn bitor(self, rhs: Self) -> Self {
@@ -58,7 +58,7 @@ impl<T: SimdElement, F: Arch> BitOr for Mask<T, F> {
     }
 }
 
-impl<T: SimdElement, F: Arch> BitXor for Mask<T, F> {
+impl<T: SimdElement, A: Arch> BitXor for Mask<T, A> {
     type Output = Self;
     #[inline(always)]
     fn bitxor(self, rhs: Self) -> Self {
@@ -66,7 +66,7 @@ impl<T: SimdElement, F: Arch> BitXor for Mask<T, F> {
     }
 }
 
-impl<T: SimdElement, F: Arch> Not for Mask<T, F> {
+impl<T: SimdElement, A: Arch> Not for Mask<T, A> {
     type Output = Self;
     #[inline(always)]
     fn not(self) -> Self {
@@ -74,14 +74,14 @@ impl<T: SimdElement, F: Arch> Not for Mask<T, F> {
     }
 }
 
-impl<T: SimdElement, F: Arch> Mask<T, F> {
+impl<T: SimdElement, A: Arch> Mask<T, A> {
     #[inline(always)]
     pub fn andnot(self, rhs: Self) -> Self {
         unsafe { Self::new(self.data.and_not(rhs.data)) }
     }
 
     // TODO: Add 16 bit select.
-    pub fn select(self, true_values: Simd<T, F>, false_values: Simd<T, F>) -> Simd<T, F> {
+    pub fn select(self, true_values: Simd<T, A>, false_values: Simd<T, A>) -> Simd<T, A> {
         unsafe {
             match T::BIT_SIZE {
                 BitSize::Size64 => {
@@ -99,7 +99,7 @@ impl<T: SimdElement, F: Arch> Mask<T, F> {
     }
 }
 
-impl<T: SimdElement, F: Arch> Mask<T, F> {
+impl<T: SimdElement, A: Arch> Mask<T, A> {
     pub fn to_bits(self) -> u64 {
         unsafe {
             match T::BIT_SIZE {
@@ -114,10 +114,10 @@ impl<T: SimdElement, F: Arch> Mask<T, F> {
     pub fn from_bits(bitmask: u64) -> Self {
         unsafe {
             match T::BIT_SIZE {
-                BitSize::Size64 => Self::new(F::Mask::from_bits_64(bitmask)),
-                BitSize::Size32 => Self::new(F::Mask::from_bits_32(bitmask)),
-                BitSize::Size16 => Self::new(F::Mask::from_bits_16(bitmask)),
-                BitSize::Size8 => Self::new(F::Mask::from_bits_8(bitmask)),
+                BitSize::Size64 => Self::new(A::Mask::from_bits_64(bitmask)),
+                BitSize::Size32 => Self::new(A::Mask::from_bits_32(bitmask)),
+                BitSize::Size16 => Self::new(A::Mask::from_bits_16(bitmask)),
+                BitSize::Size8 => Self::new(A::Mask::from_bits_8(bitmask)),
             }
         }
     }
