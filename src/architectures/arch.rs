@@ -1,6 +1,4 @@
 #[cfg(target_arch = "x86_64")]
-use crate::architectures::interface::Block;
-#[cfg(target_arch = "x86_64")]
 use crate::architectures::intrinsics::avx2::Avx2Reg;
 #[cfg(target_arch = "x86_64")]
 use crate::architectures::intrinsics::avx512::{Avx512Mask, Avx512Reg};
@@ -9,7 +7,7 @@ use crate::architectures::intrinsics::neon::NeonReg;
 #[cfg(target_arch = "x86_64")]
 use crate::architectures::intrinsics::sse::SseReg;
 
-use crate::architectures::interface::Arch;
+use crate::architectures::interface::{Arch, Block};
 use crate::architectures::intrinsics::scalar::{ScalarMask, ScalarReg};
 use crate::register::Simd;
 use crate::{Architecture, SimdElement};
