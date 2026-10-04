@@ -1,5 +1,5 @@
 #![allow(clippy::missing_safety_doc)]
-use std::{fmt::Debug, ops::{Index, IndexMut}};
+use std::{fmt::Debug, ops::{Deref, DerefMut}};
 
 use crate::{Architecture, SimdElement, simd_array::SimdToArray, register::Simd};
 
@@ -8,16 +8,12 @@ pub trait Arch: Clone + Copy + Default {
     const NUM_SIMD_REG: usize;
     const ARCHITECTURE: Architecture;
 
-    type Block2<T: SimdElement>: Index<usize, Output = Simd<T, Self>>
-        + IndexMut<usize>
-        + AsRef<[Simd<T, Self>]>
-        + AsMut<[Simd<T, Self>]>
+    type Block2<T: SimdElement>: Deref<Target = [Simd<T, Self>]>
+        + DerefMut
         + Default;
 
-    type Block4<T: SimdElement>: Index<usize, Output = Simd<T, Self>>
-        + IndexMut<usize>
-        + AsRef<[Simd<T, Self>]>
-        + AsMut<[Simd<T, Self>]>
+    type Block4<T: SimdElement>: Deref<Target = [Simd<T, Self>]>
+        + DerefMut
         + Default;
 
     type Vec: SimdArch
@@ -66,6 +62,51 @@ pub trait MaskArch:
     Copy + Clone + SimdBitwiseImpl + SimdAllBitsImpl + SimdVariableBlendImpl + SimdMaskBitConversion
 {
 }
+
+#[repr(transparent)]
+pub struct Block<V, const N: usize>([V; N]);
+
+impl<V: Default, const N: usize> Default for Block<V, N> {
+    #[inline(always)]
+    fn default() -> Self {
+        Block(core::array::from_fn(|_| V::default()))
+    }
+}
+
+impl<V, const N: usize> Deref for Block<V, N> {
+    type Target = [V];
+    #[inline(always)]
+    fn deref(&self) -> &[V] { &self.0 }
+}
+
+impl<V, const N: usize> DerefMut for Block<V, N> {
+    #[inline(always)]
+    fn deref_mut(&mut self) -> &mut [V] { &mut self.0 }
+}
+
+// pub trait BlockExt<V> {
+//     /// # Safety
+//     /// `index` must be in bounds.
+//     unsafe fn get_unchecked(&self, index: usize) -> &V;
+//     /// # Safety
+//     /// `index` must be in bounds.
+//     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut V;
+// }
+//
+// impl<V, B> BlockExt<V> for B
+// where
+//     B: AsRef<[V]> + AsMut<[V]>,
+// {
+//     #[inline(always)]
+//     unsafe fn get_unchecked(&self, index: usize) -> &V {
+//         unsafe { self.as_ref().get_unchecked(index) }
+//     }
+//
+//     #[inline(always)]
+//     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut V {
+//         unsafe { self.as_mut().get_unchecked_mut(index) }
+//     }
+// }
 
 // === Arithmetic ===
 pub trait SimdAddImpl {

@@ -1,4 +1,6 @@
 #[cfg(target_arch = "x86_64")]
+use crate::architectures::interface::Block;
+#[cfg(target_arch = "x86_64")]
 use crate::architectures::intrinsics::avx2::Avx2Reg;
 #[cfg(target_arch = "x86_64")]
 use crate::architectures::intrinsics::avx512::{Avx512Mask, Avx512Reg};
@@ -22,8 +24,8 @@ impl Arch for Sse {
     const SIMD_WIDTH: usize = 16;
     const NUM_SIMD_REG: usize = 16;
     const ARCHITECTURE: Architecture = Architecture::Sse;
-    type Block2<T: SimdElement> = [Simd<T, Self>; 4];
-    type Block4<T: SimdElement> = [Simd<T, Self>; 2];
+    type Block2<T: SimdElement> = Block<Simd<T, Self>, 4>;
+    type Block4<T: SimdElement> = Block<Simd<T, Self>, 2>;
 
     type Vec = SseReg;
     type Mask = SseReg;
@@ -43,8 +45,8 @@ impl Arch for Avx2 {
     const SIMD_WIDTH: usize = 32;
     const NUM_SIMD_REG: usize = 16;
     const ARCHITECTURE: Architecture = Architecture::Avx2;
-    type Block2<T: SimdElement> = [Simd<T, Self>; 4];
-    type Block4<T: SimdElement> = [Simd<T, Self>; 2];
+    type Block2<T: SimdElement> = Block<Simd<T, Self>, 4>;
+    type Block4<T: SimdElement> = Block<Simd<T, Self>, 2>;
 
     type Vec = Avx2Reg;
     type Mask = Avx2Reg;
@@ -64,8 +66,8 @@ impl Arch for Avx512 {
     const SIMD_WIDTH: usize = 64;
     const NUM_SIMD_REG: usize = 32;
     const ARCHITECTURE: Architecture = Architecture::Avx512;
-    type Block2<T: SimdElement> = [Simd<T, Self>; 8];
-    type Block4<T: SimdElement> = [Simd<T, Self>; 4];
+    type Block2<T: SimdElement> = Block<Simd<T, Self>, 8>;
+    type Block4<T: SimdElement> = Block<Simd<T, Self>, 4>;
 
     type Vec = Avx512Reg;
     type Mask = Avx512Mask;
@@ -85,8 +87,8 @@ impl Arch for Neon {
     const SIMD_WIDTH: usize = 16;
     const NUM_SIMD_REG: usize = 32;
     const ARCHITECTURE: Architecture = Architecture::Neon;
-    type Block2<T: SimdElement> = [Simd<T, Self>; 8];
-    type Block4<T: SimdElement> = [Simd<T, Self>; 4];
+    type Block2<T: SimdElement> = Block<Simd<T, Self>, 8>;
+    type Block4<T: SimdElement> = Block<Simd<T, Self>, 4>;
 
     type Vec = NeonReg;
     type Mask = NeonReg;
@@ -104,8 +106,8 @@ impl Arch for Scalar128 {
     const SIMD_WIDTH: usize = 16;
     const NUM_SIMD_REG: usize = 16;
     const ARCHITECTURE: Architecture = Architecture::Scalar128;
-    type Block2<T: SimdElement> = [Simd<T, Self>; 4];
-    type Block4<T: SimdElement> = [Simd<T, Self>; 2];
+    type Block2<T: SimdElement> = Block<Simd<T, Self>, 4>;
+    type Block4<T: SimdElement> = Block<Simd<T, Self>, 2>;
 
     type Vec = ScalarReg<16>;
     type Mask = ScalarMask<16>;
@@ -123,8 +125,8 @@ impl Arch for Scalar256 {
     const SIMD_WIDTH: usize = 32;
     const NUM_SIMD_REG: usize = 16;
     const ARCHITECTURE: Architecture = Architecture::Scalar128;
-    type Block2<T: SimdElement> = [Simd<T, Self>; 4];
-    type Block4<T: SimdElement> = [Simd<T, Self>; 2];
+    type Block2<T: SimdElement> = Block<Simd<T, Self>, 4>;
+    type Block4<T: SimdElement> = Block<Simd<T, Self>, 2>;
 
     type Vec = ScalarReg<32>;
     type Mask = ScalarMask<32>;
@@ -142,8 +144,8 @@ impl Arch for Scalar512 {
     const SIMD_WIDTH: usize = 64;
     const NUM_SIMD_REG: usize = 16;
     const ARCHITECTURE: Architecture = Architecture::Scalar128;
-    type Block2<T: SimdElement> = [Simd<T, Self>; 4];
-    type Block4<T: SimdElement> = [Simd<T, Self>; 2];
+    type Block2<T: SimdElement> = Block<Simd<T, Self>, 4>;
+    type Block4<T: SimdElement> = Block<Simd<T, Self>, 2>;
 
     type Vec = ScalarReg<64>;
     type Mask = ScalarMask<64>;
