@@ -91,7 +91,7 @@ simd_vec_tests!(eq_test, [f32, f64, u32, u64, i32, i64], |x, y| {
     x.simd_eq(y).select(x, y)
 });
 simd_vec_tests!(neq_test, [f32, f64, u32, u64, i32, i64], |x, y| {
-    x.simd_neq(y).select(x, y)
+    x.simd_ne(y).select(x, y)
 });
 
 simd_vec_tests!(float_int_cast_test, [[i32 -> f32]], |x| { x.cast_float() });

@@ -432,7 +432,7 @@ impl<T: SimdElement, A: Arch> Simd<T, A> {
     }
 
     #[inline(always)]
-    pub fn simd_neq(self, rhs: Self) -> Mask<T, A> {
+    pub fn simd_ne(self, rhs: Self) -> Mask<T, A> {
         unsafe {
             Mask::new(match T::TYPE {
                 SimdType::F64 => self.data.cmp_f64_neq(rhs.data),
