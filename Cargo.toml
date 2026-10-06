@@ -31,3 +31,11 @@ simply-simd-macros = { path = "macros", version = "0.1.0" }
 
 [dev-dependencies]
 paste = "1.0.15"
+criterion = "0.8.2"
+
+[[example]]
+name = "exp"
+
+[[bench]]
+name = "math"
+harness = false

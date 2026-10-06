@@ -324,13 +324,19 @@ impl SimdInteger for u8 {
 
 pub trait SimdFloat: SimdElement + HasSigned + HasUnsigned + SimdMulType {
     const SIGN_MASK: usize;
+    type IntType: SimdElement + SimdInteger + SimdIntegerNotByte;
+    type UintType: SimdElement + SimdInteger + SimdIntegerNotByte;
 }
 
 impl SimdFloat for f64 {
     const SIGN_MASK: usize = 0x7FFFFFFFFFFFFFFF;
+    type IntType = i64;
+    type UintType = u64;
 }
 impl SimdFloat for f32 {
     const SIGN_MASK: usize = 0x7FFFFFFF;
+    type IntType = i32;
+    type UintType = u32;
 }
 
 pub trait SimdWideType: SimdElement {}
@@ -376,15 +382,15 @@ impl SimdMulType for u16 {}
 // impl BitSize8 for u8 {}
 
 pub trait HasFloat: SimdElement {
-    type Float: SimdElement;
+    type Float: SimdElement + SimdFloat;
 }
 
 pub trait HasSigned: SimdElement {
-    type Signed: SimdElement;
+    type Signed: SimdElement + SimdInteger;
 }
 
 pub trait HasUnsigned: SimdElement {
-    type Unsigned: SimdElement;
+    type Unsigned: SimdElement + SimdInteger;
 }
 
 // Floats.

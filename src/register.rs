@@ -7,6 +7,7 @@ pub mod element;
 pub mod integer;
 pub mod float;
 pub mod iters;
+pub mod math;
 
 #[derive(Clone, Copy)]
 #[repr(transparent)]
