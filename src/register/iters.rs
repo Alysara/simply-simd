@@ -61,6 +61,7 @@ pub struct SimdSliceIter<'a, T: SimdElement, A: Arch> {
 impl<'a, T: SimdElement, A: Arch> Iterator for SimdSliceIter<'a, T, A> {
     type Item = Simd<T, A>;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         if self.index == self.slice.len() {
             return None;
@@ -227,6 +228,7 @@ pub struct SimdVecIntoIter<T: SimdElement, A: Arch> {
 impl<T: SimdElement, A: Arch> Iterator for SimdVecIntoIter<T, A> {
     type Item = Simd<T, A>;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         if self.index >= self.vec.len() {
             return None;
