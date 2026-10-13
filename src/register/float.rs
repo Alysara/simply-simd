@@ -128,6 +128,7 @@ impl<T: SimdFloat, A: Arch> Simd<T, A> {
         t * t * t.mul_add(neg_two, three)
     }
 
+    #[inline(always)]
     pub fn sqrt(self) -> Self {
         unsafe {
             Self::new(match T::TYPE {
@@ -138,6 +139,7 @@ impl<T: SimdFloat, A: Arch> Simd<T, A> {
         }
     }
 
+    #[inline(always)]
     pub fn abs(self) -> Self {
         unsafe {
             Self::new(match T::TYPE {
@@ -153,6 +155,7 @@ impl<T: SimdFloat, A: Arch> Simd<T, A> {
     }
 
     /// Only rsqrt_f32 currently supported.
+    #[inline(always)]
     pub fn rsqrt(self) -> Self {
         unsafe { Self::new(self.data.rsqrt_f32()) }
     }
