@@ -542,7 +542,7 @@ impl SimdInterleave for Avx512Reg {
             let mask = Self::splat_16(0x00FFu16);
             let low = self.and(mask);
             let high = rhs.and(mask);
-            let packed = self_from_op!(_mm256_packus_epi16, low, high);
+            let packed = self_from_op!(_mm512_packus_epi16, low, high);
             let indices = Self(_mm512_setr_epi64(0, 2, 4, 6, 1, 3, 5, 7));
             packed.vpermute_64(indices)
         }
@@ -576,7 +576,7 @@ impl SimdInterleave for Avx512Reg {
         unsafe {
             let low = self.srli_32::<16>();
             let high = rhs.srli_32::<16>();
-            let packed = self_from_op!(_mm256_packus_epi32, low, high);
+            let packed = self_from_op!(_mm512_packus_epi32, low, high);
             let indices = Self(_mm512_setr_epi64(0, 2, 4, 6, 1, 3, 5, 7));
             packed.vpermute_64(indices)
         }
@@ -587,7 +587,7 @@ impl SimdInterleave for Avx512Reg {
         unsafe {
             let low = self.srli_16::<8>();
             let high = rhs.srli_16::<8>();
-            let packed = self_from_op!(_mm256_packus_epi16, low, high);
+            let packed = self_from_op!(_mm512_packus_epi16, low, high);
             let indices = Self(_mm512_setr_epi64(0, 2, 4, 6, 1, 3, 5, 7));
             packed.vpermute_64(indices)
         }
