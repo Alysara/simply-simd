@@ -120,15 +120,15 @@ impl SimdBitwise for NeonReg {
 impl SimdShift for NeonReg {
     #[inline(always)]
     unsafe fn sll_64(self, rhs: u32) -> Self {
-        unsafe { self.sllv_64(Self::splat_64(rhs)) }
+        unsafe { self.sllv_64(Self::splat_64(rhs as u64)) }
     }
     #[inline(always)]
     unsafe fn srl_64(self, rhs: u32) -> Self {
-        unsafe { self.srlv_64(Self::splat_64(rhs)) }
+        unsafe { self.srlv_64(Self::splat_64(rhs as u64)) }
     }
     #[inline(always)]
     unsafe fn sra_64(self, rhs: u32) -> Self {
-        unsafe { self.srav_64(Self::splat_64(rhs)) }
+        unsafe { self.srav_64(Self::splat_64(rhs as u64)) }
     }
     #[inline(always)]
     unsafe fn sll_32(self, rhs: u32) -> Self {
@@ -144,16 +144,17 @@ impl SimdShift for NeonReg {
     }
     #[inline(always)]
     unsafe fn sll_16(self, rhs: u32) -> Self {
-        unsafe { self.sllv_16(Self::splat_16(rhs)) }
+        unsafe { self.sllv_16(Self::splat_16(rhs as u16)) }
     }
     #[inline(always)]
     unsafe fn srl_16(self, rhs: u32) -> Self {
-        unsafe { self.srlv_16(Self::splat_16(rhs)) }
+        unsafe { self.srlv_16(Self::splat_16(rhs as u16)) }
     }
     #[inline(always)]
     unsafe fn sra_16(self, rhs: u32) -> Self {
-        unsafe { self.srav_16(Self::splat_16(rhs)) }
+        unsafe { self.srav_16(Self::splat_16(rhs as u16)) }
     }
+
     map_intrinsic!(slli_64, vshlq_n_u64, const N: i32, self);
     map_intrinsic!(srli_64, vshrq_n_u64, const N: i32, self);
     map_intrinsic!(srai_64, vshrq_n_s64, const N: i32, self);
@@ -163,6 +164,7 @@ impl SimdShift for NeonReg {
     map_intrinsic!(slli_16, vshlq_n_u16, const N: i32, self);
     map_intrinsic!(srli_16, vshrq_n_u16, const N: i32, self);
     map_intrinsic!(srai_16, vshrq_n_s16, const N: i32, self);
+
     #[inline(always)]
     unsafe fn sllv_64(self, rhs: Self) -> Self {
         self_from_op!(vshlq_s64, self, rhs)
@@ -291,15 +293,15 @@ impl SimdPermute for NeonReg {
         unsafe {
             let lo = self_from_const_op!(vdupq_laneq_u64, 0, self);
             let hi = self_from_const_op!(vdupq_laneq_u64, 1, self);
-            let mask = self_from_op!(vtstq_u64, rhs, Self::splat_64(1));
+            let mask = self_from_op!(vtstq_u64, rhs, Self::splat_64(1u64));
             mask.vblend_64(lo, hi)
         }
     }
     #[inline(always)]
     unsafe fn vpermute_32(self, rhs: Self) -> Self {
         unsafe {
-            let mult = Self::splat_32(0x04040404);
-            let add = Self::splat_32(0x03020100);
+            let mult = Self::splat_32(0x04040404u32);
+            let add = Self::splat_32(0x03020100u32);
             let byte_indices = self_from_op!(vmlaq_u32, add, rhs, mult);
             self_from_op!(vqtbl1q_u8, self, byte_indices)
         }
@@ -307,8 +309,8 @@ impl SimdPermute for NeonReg {
     #[inline(always)]
     unsafe fn vshuffle_16(self, rhs: Self) -> Self {
         unsafe {
-            let mult = Self::splat_16(0x0202);
-            let add = Self::splat_32(0x0100);
+            let mult = Self::splat_16(0x0202u16);
+            let add = Self::splat_32(0x0100u32);
             let byte_indices = self_from_op!(vmlaq_u16, add, rhs, mult);
             self_from_op!(vqtbl1q_u8, self, byte_indices)
         }

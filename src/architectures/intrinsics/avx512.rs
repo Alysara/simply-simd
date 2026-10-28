@@ -112,7 +112,7 @@ impl SimdBitwise for Avx512Reg {
     }
     #[inline(always)]
     unsafe fn not(self) -> Self {
-        unsafe { Self(self.xor(Self::splat_32(!0)).0) }
+        unsafe { Self(self.xor(Self::splat_32(!0u32)).0) }
     }
     #[inline(always)]
     unsafe fn and_not(self, rhs: Self) -> Self {
@@ -222,9 +222,9 @@ impl SimdPermute for Avx512Reg {
     #[inline(always)]
     unsafe fn vshuffle_16(self, rhs: Self) -> Self {
         unsafe {
-            let multiplier = Self::splat_16(0x0202);
+            let multiplier = Self::splat_16(0x0202u16);
             let broadcasted = self.i16_mul(multiplier);
-            let hi_dword_offset = Self::splat_16(0x0100);
+            let hi_dword_offset = Self::splat_16(0x0100u16);
             let indices = broadcasted.i32_add(hi_dword_offset);
             rhs.vshuffle_8(indices)
         }
@@ -527,7 +527,7 @@ impl SimdInterleave for Avx512Reg {
     #[inline(always)]
     unsafe fn deinterleave_even_16(self, rhs: Self) -> Self {
         unsafe {
-            let mask = Self::splat_32(0x0000FFFF);
+            let mask = Self::splat_32(0x0000FFFFu32);
             let low = self.and(mask);
             let high = rhs.and(mask);
             let packed = self_from_op!(_mm512_packus_epi32, low, high);
@@ -539,7 +539,7 @@ impl SimdInterleave for Avx512Reg {
     #[inline(always)]
     unsafe fn deinterleave_even_8(self, rhs: Self) -> Self {
         unsafe {
-            let mask = Self::splat_16(0x00FF);
+            let mask = Self::splat_16(0x00FFu16);
             let low = self.and(mask);
             let high = rhs.and(mask);
             let packed = self_from_op!(_mm256_packus_epi16, low, high);
