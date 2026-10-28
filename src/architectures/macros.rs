@@ -56,6 +56,13 @@ macro_rules! map_intrinsic {
         }
     };
 
+    ($func:ident, $intrinsic:ident, $arg1:ident : $ty1:ty, self $(, $arg:ident : $ty:ty)* $(,)?) => {
+        #[inline(always)]
+        unsafe fn $func(self, $arg1: $ty1 $(, $arg: $ty)*) -> Self {
+            unsafe { self_from_op!($intrinsic, $arg1, self $(, $arg)*) }
+        }
+    };
+
     ($func:ident, $intrinsic:ident $(, $arg:ident : $ty:ty)* $(,)?) => {
         #[inline(always)]
         unsafe fn $func($(, $arg: $ty)*) -> Self {

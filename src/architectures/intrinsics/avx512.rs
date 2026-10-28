@@ -216,17 +216,17 @@ impl SimdIntCasts for Avx512Reg {
 }
 
 impl SimdPermute for Avx512Reg {
-    map_intrinsic!(vpermute_64, _mm512_permutexvar_epi64, self, rhs: Self);
-    map_intrinsic!(vpermute_32, _mm512_permutexvar_epi32, self, rhs: Self);
+    map_intrinsic!(vpermute_64, _mm512_permutexvar_epi64, rhs: Self, self);
+    map_intrinsic!(vpermute_32, _mm512_permutexvar_epi32, rhs: Self, self);
 
     #[inline(always)]
     unsafe fn vshuffle_16(self, rhs: Self) -> Self {
         unsafe {
             let multiplier = Self::splat_16(0x0202u16);
-            let broadcasted = self.i16_mul(multiplier);
+            let broadcasted = rhs.i16_mul(multiplier);
             let hi_dword_offset = Self::splat_16(0x0100u16);
             let indices = broadcasted.i32_add(hi_dword_offset);
-            rhs.vshuffle_8(indices)
+            self.vshuffle_8(indices)
         }
     }
 
@@ -266,7 +266,7 @@ impl SimdPermute for Avx512Reg {
     unsafe fn shuffle2_128<const N: i32>(self, rhs: Self) -> Self {
         unsafe {
             match N & 0b11 {
-                0b10 => self.blend_64::<0xCC>(rhs),
+                0b10 => Avx512Mask(0b00110011).vblend_64(self, rhs),
                 0b00 => self_from_const_op!(_mm512_mask_permutex_epi64, 0x44, self, 0xCCu8, rhs),
                 0b11 => self_from_const_op!(_mm512_mask_permutex_epi64, 0xEE, rhs, 0x33u8, self),
                 0b01 => {
@@ -731,25 +731,25 @@ impl SimdPartialOrd for Avx512Reg {
     map_int_cmp!(cmp_u16_gt, _mm512_cmpgt_epu16_mask);
     map_int_cmp!(cmp_u8_gt, _mm512_cmpgt_epu8_mask);
     map_intrinsic!(max_f64, _mm512_max_pd, self, rhs: Self);
-    map_intrinsic!(min_f64, _mm512_max_pd, self, rhs: Self);
+    map_intrinsic!(min_f64, _mm512_min_pd, self, rhs: Self);
     map_intrinsic!(max_f32, _mm512_max_ps, self, rhs: Self);
-    map_intrinsic!(min_f32, _mm512_max_ps, self, rhs: Self);
+    map_intrinsic!(min_f32, _mm512_min_ps, self, rhs: Self);
     map_intrinsic!(max_i64, _mm512_max_epi64, self, rhs: Self);
-    map_intrinsic!(min_i64, _mm512_max_epi64, self, rhs: Self);
+    map_intrinsic!(min_i64, _mm512_min_epi64, self, rhs: Self);
     map_intrinsic!(max_i32, _mm512_max_epi32, self, rhs: Self);
-    map_intrinsic!(min_i32, _mm512_max_epi32, self, rhs: Self);
+    map_intrinsic!(min_i32, _mm512_min_epi32, self, rhs: Self);
     map_intrinsic!(max_i16, _mm512_max_epi16, self, rhs: Self);
-    map_intrinsic!(min_i16, _mm512_max_epi16, self, rhs: Self);
+    map_intrinsic!(min_i16, _mm512_min_epi16, self, rhs: Self);
     map_intrinsic!(max_i8, _mm512_max_epi8, self, rhs: Self);
-    map_intrinsic!(min_i8, _mm512_max_epi8, self, rhs: Self);
+    map_intrinsic!(min_i8, _mm512_min_epi8, self, rhs: Self);
     map_intrinsic!(max_u64, _mm512_max_epu64, self, rhs: Self);
-    map_intrinsic!(min_u64, _mm512_max_epu64, self, rhs: Self);
+    map_intrinsic!(min_u64, _mm512_min_epu64, self, rhs: Self);
     map_intrinsic!(max_u32, _mm512_max_epu32, self, rhs: Self);
-    map_intrinsic!(min_u32, _mm512_max_epu32, self, rhs: Self);
+    map_intrinsic!(min_u32, _mm512_min_epu32, self, rhs: Self);
     map_intrinsic!(max_u16, _mm512_max_epu16, self, rhs: Self);
-    map_intrinsic!(min_u16, _mm512_max_epu16, self, rhs: Self);
+    map_intrinsic!(min_u16, _mm512_min_epu16, self, rhs: Self);
     map_intrinsic!(max_u8, _mm512_max_epu8, self, rhs: Self);
-    map_intrinsic!(min_u8, _mm512_max_epu8, self, rhs: Self);
+    map_intrinsic!(min_u8, _mm512_min_epu8, self, rhs: Self);
 }
 
 // TODO: Make a custom trait for handling this transmutation into i*.
