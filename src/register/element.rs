@@ -6,10 +6,10 @@ use num_traits::NumCast;
 
 use crate::SimdElement;
 use crate::architectures::interface::*;
-use crate::simd_array::SimdToArray;
 use crate::mask::Mask;
 use crate::register::Simd;
-use crate::simd_types::{B32, B64, BitSize, SimdType};
+use crate::simd_array::SimdToArray;
+use crate::simd_types::{B32, B64, BitSize, SimdType, SimdWideType};
 
 impl<T: SimdElement, A: Arch> Simd<T, A> {
     #[inline(always)]
@@ -295,7 +295,6 @@ impl<T: SimdElement, A: Arch> Sub for Simd<T, A> {
     }
 }
 
-
 impl<T: SimdElement, A: Arch> Simd<T, A> {
     /// Clamps the values in a register between two bounds, inclusive.
     ///
@@ -324,11 +323,28 @@ impl<T: SimdElement, A: Arch> Simd<T, A> {
     pub fn blend<const N: i32>(self, false_values: Self) -> Self {
         unsafe {
             match T::BIT_SIZE {
-                BitSize::Size64 => Self::new(self.data.blend_32::<N>(false_values.data)),
+                BitSize::Size64 => Self::new(self.data.blend_64::<N>(false_values.data)),
                 BitSize::Size32 => Self::new(self.data.blend_32::<N>(false_values.data)),
-                _ => unreachable!(), // TODO: Add 16 and 8 for immediate blend.
+                BitSize::Size16 => Self::new(self.data.blend_16::<N>(false_values.data)),
+                _ => unreachable!(), // TODO: Add 8 for immediate blend.
             }
         }
+    }
+
+    /// Blends 64-bit lanes of two registers using an immediate mask.
+    #[inline(always)]
+    pub fn blend_64<const N: i32>(self, false_values: Self) -> Self {
+        unsafe { Self::new(self.data.blend_64::<N>(false_values.data)) }
+    }
+    /// Blends 32-bit lanes of two registers using an immediate mask.
+    #[inline(always)]
+    pub fn blend_32<const N: i32>(self, false_values: Self) -> Self {
+        unsafe { Self::new(self.data.blend_32::<N>(false_values.data)) }
+    }
+    /// Blends 16-bit lanes of two registers using an immediate mask.
+    #[inline(always)]
+    pub fn blend_16<const N: i32>(self, false_values: Self) -> Self {
+        unsafe { Self::new(self.data.blend_16::<N>(false_values.data)) }
     }
 }
 
@@ -360,7 +376,10 @@ impl<T: SimdElement, A: Arch> Simd<T, A> {
 
     /// Loads only the first `amount` elements into the register.
     pub fn partial_load(slice: &[T], amount: usize) -> Self {
-        assert!(slice.len() >= Self::LANES, "Attempted to do a partial load, but index is out of bounds!");
+        assert!(
+            slice.len() >= Self::LANES,
+            "Attempted to do a partial load, but index is out of bounds!"
+        );
         let amount_vec = Self::splat(<T as NumCast>::from(amount).unwrap());
         let mask = Self::iota(<T as NumCast>::from(0).unwrap()).simd_lt(amount_vec);
         Self::masked_load(slice, mask)
@@ -371,7 +390,10 @@ impl<T: SimdElement, A: Arch> Simd<T, A> {
     /// # Safety
     /// - Slice must be greater than or equal to `ArchSimd::<T>::LANES`
     pub unsafe fn partial_load_unchecked(slice: &[T], amount: usize) -> Self {
-        debug_assert!(slice.len() >= Self::LANES, "Index is out of bounds in unsafe code!");
+        debug_assert!(
+            slice.len() >= Self::LANES,
+            "Index is out of bounds in unsafe code!"
+        );
         let amount_vec = Self::splat(<T as NumCast>::from(amount).unwrap());
         let mask = Self::iota(<T as NumCast>::from(0).unwrap()).simd_lt(amount_vec);
         Self::masked_load(slice, mask)
@@ -435,8 +457,8 @@ impl<T: SimdElement, A: Arch> Simd<T, A> {
     pub fn simd_ne(self, rhs: Self) -> Mask<T, A> {
         unsafe {
             Mask::new(match T::TYPE {
-                SimdType::F64 => self.data.cmp_f64_neq(rhs.data),
-                SimdType::F32 => self.data.cmp_f32_neq(rhs.data),
+                SimdType::F64 => self.data.cmp_f64_ne(rhs.data),
+                SimdType::F32 => self.data.cmp_f32_ne(rhs.data),
                 _ => self.simd_eq(rhs).data,
             })
         }
@@ -448,15 +470,14 @@ impl<T: SimdElement, A: Arch> Simd<T, A> {
             Mask::new(match T::TYPE {
                 SimdType::F64 => self.data.cmp_f64_gt(rhs.data),
                 SimdType::F32 => self.data.cmp_f32_gt(rhs.data),
-                SimdType::U64 => self.data.cmp_i64_gt(rhs.data),
-                SimdType::U32 => self.data.cmp_i32_gt(rhs.data),
-                SimdType::U16 => self.data.cmp_i16_gt(rhs.data),
-                SimdType::U8 => self.data.cmp_i8_gt(rhs.data),
+                SimdType::U64 => self.data.cmp_u64_gt(rhs.data),
+                SimdType::U32 => self.data.cmp_u32_gt(rhs.data),
+                SimdType::U16 => self.data.cmp_u16_gt(rhs.data),
+                SimdType::U8 => self.data.cmp_u8_gt(rhs.data),
                 SimdType::I64 => self.data.cmp_i64_gt(rhs.data),
                 SimdType::I32 => self.data.cmp_i32_gt(rhs.data),
                 SimdType::I16 => self.data.cmp_i16_gt(rhs.data),
                 SimdType::I8 => self.data.cmp_i8_gt(rhs.data),
-                // _ => unreachable!() // TODO: Add integer types .
             })
         }
     }
@@ -468,10 +489,22 @@ impl<T: SimdElement, A: Arch> Simd<T, A> {
             Mask::new(match T::TYPE {
                 SimdType::F64 => self.data.cmp_f64_ge(rhs.data),
                 SimdType::F32 => self.data.cmp_f32_ge(rhs.data),
-                // SimdType::U64 => self.data.cmp_i64_gt(rhs.data).or(self.data.cmp_i64_eq(rhs.data)),
-                // SimdType::U32 => self.data.cmp_i32_gt(rhs.data).or(self.data.cmp_i32_eq(rhs.data)),
-                // SimdType::U16 => self.data.cmp_i16_gt(rhs.data).or(self.data.cmp_i16_eq(rhs.data)),
-                // SimdType::U8 => self.data.cmp_i8_gt(rhs.data).or(self.data.cmp_i8_eq(rhs.data)),
+                SimdType::U64 => self
+                    .data
+                    .cmp_u64_gt(rhs.data)
+                    .or(self.data.cmp_i64_eq(rhs.data)),
+                SimdType::U32 => self
+                    .data
+                    .cmp_u32_gt(rhs.data)
+                    .or(self.data.cmp_i32_eq(rhs.data)),
+                SimdType::U16 => self
+                    .data
+                    .cmp_u16_gt(rhs.data)
+                    .or(self.data.cmp_i16_eq(rhs.data)),
+                SimdType::U8 => self
+                    .data
+                    .cmp_u8_gt(rhs.data)
+                    .or(self.data.cmp_i8_eq(rhs.data)),
                 SimdType::I64 => self
                     .data
                     .cmp_i64_gt(rhs.data)
@@ -488,7 +521,6 @@ impl<T: SimdElement, A: Arch> Simd<T, A> {
                     .data
                     .cmp_i8_gt(rhs.data)
                     .or(self.data.cmp_i8_eq(rhs.data)),
-                _ => panic!("Unsigned integer types for less than not implemented!"), // TODO: Add integer types .
             })
         }
     }
@@ -515,19 +547,19 @@ impl<T: SimdElement, A: Arch> Simd<T, A> {
         }
     }
 
-    // TODO: Handle max for U64/I64.
     pub fn max(self, rhs: Self) -> Self {
         unsafe {
             Self::new(match T::TYPE {
                 SimdType::F64 => self.data.max_f64(rhs.data),
                 SimdType::F32 => self.data.max_f32(rhs.data),
+                SimdType::I64 => self.data.max_i64(rhs.data),
                 SimdType::I32 => self.data.max_i32(rhs.data),
                 SimdType::I16 => self.data.max_i16(rhs.data),
                 SimdType::I8 => self.data.max_i8(rhs.data),
+                SimdType::U64 => self.data.max_u64(rhs.data),
                 SimdType::U32 => self.data.max_u32(rhs.data),
                 SimdType::U16 => self.data.max_u16(rhs.data),
                 SimdType::U8 => self.data.max_u8(rhs.data),
-                _ => panic!("Max for U64/I64 not implemented!"),
             })
         }
     }
@@ -537,36 +569,375 @@ impl<T: SimdElement, A: Arch> Simd<T, A> {
             Self::new(match T::TYPE {
                 SimdType::F64 => self.data.min_f64(rhs.data),
                 SimdType::F32 => self.data.min_f32(rhs.data),
+                SimdType::I64 => self.data.min_i64(rhs.data),
                 SimdType::I32 => self.data.min_i32(rhs.data),
                 SimdType::I16 => self.data.min_i16(rhs.data),
                 SimdType::I8 => self.data.min_i8(rhs.data),
+                SimdType::U64 => self.data.min_u64(rhs.data),
                 SimdType::U32 => self.data.min_u32(rhs.data),
                 SimdType::U16 => self.data.min_u16(rhs.data),
                 SimdType::U8 => self.data.min_u8(rhs.data),
-                _ => panic!("Min for U64/I64 not implemented!"),
             })
         }
     }
 }
 
-impl<T: SimdElement + SimdElement<BitWidthType = B32>, A: Arch> Simd<T, A> {
+impl<T: SimdWideType, A: Arch> Simd<T, A> {
+    #[inline(always)]
+    pub fn permute(self, indices: Simd<T::UType, A>) -> Self {
+        unsafe {
+            match T::BIT_SIZE {
+                BitSize::Size64 => Self::new(self.data.vpermute_64(indices.data)),
+                BitSize::Size32 => Self::new(self.data.vpermute_32(indices.data)),
+                _ => unreachable!(),
+            }
+        }
+    }
+}
+
+impl<T: SimdElement, A: Arch> Simd<T, A> {
+    /// Permutes all of the 64-bit chunks in a register according
+    /// to the indices in another register.
+    #[inline(always)]
+    pub fn permute_64(self, indices: Simd<u64, A>) -> Self {
+        unsafe { Self::new(self.data.vpermute_64(indices.data)) }
+    }
+
+    /// Permutes all of the 32-bit chunks in a register according
+    /// to the indices in another register.
     #[inline(always)]
     pub fn permute_32(self, indices: Simd<u32, A>) -> Self {
-        unsafe { Self::new(self.data.permute_32(indices.data)) }
+        unsafe { Self::new(self.data.vpermute_32(indices.data)) }
+    }
+
+    /// Shuffles the 16-bit chunks for each 128-bit lane in a register
+    /// according to the indices in another register. Each index is
+    /// relative to its 128-bit chunk lanes cannot cross the 128-bit boundary.
+    #[inline(always)]
+    pub fn shuffle_16(self, indices: Simd<u16, A>) -> Self {
+        unsafe { Self::new(self.data.vshuffle_16(indices.data)) }
+    }
+
+    /// Shuffles the 8-bit chunks for each 128-bit lane in a register
+    /// according to the indices in another register. Each index is
+    /// relative to its 128-bit chunk lanes cannot cross the 128-bit boundary.
+    #[inline(always)]
+    pub fn shuffle_8(self, indices: Simd<u8, A>) -> Self {
+        unsafe { Self::new(self.data.vshuffle_8(indices.data)) }
+    }
+
+    /// Shuffles 128 bit chunks inside every 256-bit lane repeating
+    /// using a 2 bit immediate. Each bit selects a 128-bit chunk from
+    /// the current 256-bit lane, repeating for every 256 bit chunk.
+    /// If the register is only 128 bits, then the register is returned
+    /// unmodified.
+    #[inline(always)]
+    pub fn permute_imm_128<const N: i32>(self) -> Self {
+        unsafe { Self::new(self.data.permute_128::<N>()) }
+    }
+
+    /// Shuffles 64 bit chunks inside every 128-bit lane repeating
+    /// using a 2 bit immediate. Each bit selects a 64-bit chunk from
+    /// the current 128-bit lane, repeating for every 128 bit chunk.
+    #[inline(always)]
+    pub fn shuffle_imm_64<const N: i32>(self) -> Self {
+        unsafe { Self::new(self.data.shuffle_64::<N>()) }
+    }
+
+    /// Shuffles 32 bit chunks inside every 128-bit lane repeating
+    /// using an 8 bit immediate. Each 2-bit segment selects a 32-bit chunk
+    /// from the current 128-bit lane, repeating for every 128 bit lane.
+    #[inline(always)]
+    pub fn shuffle_imm_32<const N: i32>(self) -> Self {
+        unsafe { Self::new(self.data.shuffle_32::<N>()) }
+    }
+
+    /// Shuffles 16 bit chunks inside every 64-bit lane repeating
+    /// using an 8 bit immediate. Each 2-bit segment selects a 16-bit chunk
+    /// from the current 64-bit lane, repeating for every 64 bit lane.
+    #[inline(always)]
+    pub fn shuffle_imm_16<const N: i32>(self) -> Self {
+        unsafe { Self::new(self.data.shuffle_16::<N>()) }
+    }
+
+    /// Combines two input registers by selecting the upper or lower
+    /// half from each as decided by a 2 bit immediate.
+    #[inline(always)]
+    pub fn permute2_imm_half<const N: i32>(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.permute2_half::<N>(rhs.data)) }
+    }
+
+    /// Shuffles 128 bit chunks inside every 256-bit lane repeating
+    /// using a 2 bit immediate. Each bit selects a 128-bit chunk from
+    /// the current 256-bit lane, repeating for every 256 bit chunk.
+    /// The first bit picks from `self`, while the second bit picks from `rhs`.
+    /// If the register is only 128 bits, then the register is returned
+    /// unmodified.
+    #[inline(always)]
+    pub fn shuffle2_imm_128<const N: i32>(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.shuffle2_128::<N>(rhs.data)) }
+    }
+
+    /// Shuffles 64 bit chunks inside every 128-bit lane repeating
+    /// using a 2 bit immediate. Each bit selects a 64-bit chunk from
+    /// the current 128-bit lane, repeating for every 128 bit chunk.
+    /// The first bit picks from `self`, while the second bit picks from `rhs`.
+    #[inline(always)]
+    pub fn shuffle2_imm_64<const N: i32>(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.shuffle2_64::<N>(rhs.data)) }
+    }
+
+    /// Shuffles 32 bit chunks inside every 128-bit lane repeating
+    /// using an 8 bit immediate. Each 2-bit segment selects a 32-bit chunk
+    /// from the current 128-bit lane, repeating for every 128 bit lane.
+    /// The first 4-bits (first two selections) select from `self`, while
+    /// the second 4-bits select from `rhs`.
+    #[inline(always)]
+    pub fn shuffle2_imm_32<const N: i32>(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.shuffle2_32::<N>(rhs.data)) }
+    }
+
+    /// Takes the lower halves of two registers and interleaves them
+    /// in 128-bit chunks. If the register is only 128-bits, it is
+    /// returned unmodified.
+    #[inline(always)]
+    pub fn interleave_lower_128(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_lower_128(rhs.data)) }
+    }
+
+    /// Takes the lower halves of two registers and interleaves them
+    /// in 64-bit chunks.
+    #[inline(always)]
+    pub fn interleave_lower_64(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_lower_64(rhs.data)) }
+    }
+
+    /// Takes the lower halves of two registers and interleaves them
+    /// in 32-bit chunks.
+    #[inline(always)]
+    pub fn interleave_lower_32(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_lower_32(rhs.data)) }
+    }
+
+    /// Takes the lower halves of two registers and interleaves them
+    /// in 16-bit chunks.
+    #[inline(always)]
+    pub fn interleave_lower_16(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_lower_16(rhs.data)) }
+    }
+
+    /// Takes the lower halves of two registers and interleaves them
+    /// in 8-bit chunks.
+    #[inline(always)]
+    pub fn interleave_lower_8(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_lower_8(rhs.data)) }
+    }
+
+    /// Takes the upper halves of two registers and interleaves them
+    /// in 128-bit chunks. If the register is only 128-bits, it is
+    /// returned unmodified.
+    #[inline(always)]
+    pub fn interleave_upper_128(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_upper_128(rhs.data)) }
+    }
+
+    /// Takes the upper halves of two registers and interleaves them
+    /// in 64-bit chunks.
+    #[inline(always)]
+    pub fn interleave_upper_64(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_upper_64(rhs.data)) }
+    }
+
+    /// Takes the upper halves of two registers and interleaves them
+    /// in 32-bit chunks.
+    #[inline(always)]
+    pub fn interleave_upper_32(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_upper_32(rhs.data)) }
+    }
+
+    /// Takes the upper halves of two registers and interleaves them
+    /// in 16-bit chunks.
+    #[inline(always)]
+    pub fn interleave_upper_16(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_upper_16(rhs.data)) }
+    }
+
+    /// Takes the upper halves of two registers and interleaves them
+    /// in 8-bit chunks.
+    #[inline(always)]
+    pub fn interleave_upper_8(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_upper_8(rhs.data)) }
+    }
+
+    /// Interleaves the even 128-bit chunks of two registers.
+    /// If the register is only 128 bits, then it is returned unmodified.
+    #[inline(always)]
+    pub fn interleave_even_128(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_even_128(rhs.data)) }
+    }
+
+    /// Interleaves the even 64-bit chunks of two registers.
+    #[inline(always)]
+    pub fn interleave_even_64(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_even_64(rhs.data)) }
+    }
+
+    /// Interleaves the even 32-bit chunks of two registers.
+    #[inline(always)]
+    pub fn interleave_even_32(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_even_32(rhs.data)) }
+    }
+
+    /// Interleaves the even 16-bit chunks of two registers.
+    #[inline(always)]
+    pub fn interleave_even_16(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_even_16(rhs.data)) }
+    }
+
+    /// Interleaves the even 8-bit chunks of two registers.
+    #[inline(always)]
+    pub fn interleave_even_8(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_even_8(rhs.data)) }
+    }
+
+    /// Interleaves the odd 128-bit chunks of two registers.
+    /// If the register is only 128 bits, then it is returned unmodified.
+    #[inline(always)]
+    pub fn interleave_odd_128(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_odd_128(rhs.data)) }
+    }
+
+    /// Interleaves the odd 64-bit chunks of two registers.
+    #[inline(always)]
+    pub fn interleave_odd_64(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_odd_64(rhs.data)) }
+    }
+
+    /// Interleaves the odd 32-bit chunks of two registers.
+    #[inline(always)]
+    pub fn interleave_odd_32(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_odd_32(rhs.data)) }
+    }
+
+    /// Interleaves the odd 16-bit chunks of two registers.
+    #[inline(always)]
+    pub fn interleave_odd_16(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_odd_16(rhs.data)) }
+    }
+
+    /// Interleaves the odd 8-bit chunks of two registers.
+    #[inline(always)]
+    pub fn interleave_odd_8(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_odd_8(rhs.data)) }
+    }
+
+    /// Concatenates two registers together and packs all of the even
+    /// 128-bit chunks into one register. If the register is only 128 bits,
+    /// then it is returned unmodified.
+    #[inline(always)]
+    pub fn deinterleave_even_128(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.deinterleave_even_128(rhs.data)) }
+    }
+
+    /// Concatenates two registers together and packs all of the even
+    /// 64-bit chunks into one register.
+    #[inline(always)]
+    pub fn deinterleave_even_64(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.deinterleave_even_64(rhs.data)) }
+    }
+
+    /// Concatenates two registers together and packs all of the even
+    /// 32-bit chunks into one register.
+    #[inline(always)]
+    pub fn deinterleave_even_32(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.deinterleave_even_32(rhs.data)) }
+    }
+
+    /// Concatenates two registers together and packs all of the even
+    /// 16-bit chunks into one register.
+    #[inline(always)]
+    pub fn deinterleave_even_16(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.deinterleave_even_16(rhs.data)) }
+    }
+
+    /// Concatenates two registers together and packs all of the even
+    /// 8-bit chunks into one register.
+    #[inline(always)]
+    pub fn deinterleave_even_8(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.deinterleave_even_8(rhs.data)) }
+    }
+
+    /// Concatenates two registers together and packs all of the odd
+    /// 128-bit chunks into one register. If the register is only 128 bits,
+    /// then it is returned unmodified.
+    #[inline(always)]
+    pub fn deinterleave_odd_128(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.deinterleave_odd_128(rhs.data)) }
+    }
+
+    /// Concatenates two registers together and packs all of the odd
+    /// 64-bit chunks into one register.
+    #[inline(always)]
+    pub fn deinterleave_odd_64(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.deinterleave_odd_64(rhs.data)) }
+    }
+
+    /// Concatenates two registers together and packs all of the odd
+    /// 32-bit chunks into one register.
+    #[inline(always)]
+    pub fn deinterleave_odd_32(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.deinterleave_odd_32(rhs.data)) }
+    }
+
+    /// Concatenates two registers together and packs all of the odd
+    /// 16-bit chunks into one register.
+    #[inline(always)]
+    pub fn deinterleave_odd_16(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.deinterleave_odd_16(rhs.data)) }
+    }
+
+    /// Concatenates two registers together and packs all of the odd
+    /// 8-bit chunks into one register.
+    #[inline(always)]
+    pub fn deinterleave_odd_8(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.deinterleave_odd_8(rhs.data)) }
+    }
+
+    /// Concatenates the lower half of the first register with
+    /// the lower half of the second register.
+    #[inline(always)]
+    pub fn concat_lo_lo(self, rhs: Self) -> Self {
+        self.shuffle2_imm_128::<0b00>(rhs)
+    }
+
+    /// Concatenates the lower half of the first register with
+    /// the upper half of the second register.
+    #[inline(always)]
+    pub fn concat_lo_hi(self, rhs: Self) -> Self {
+        self.shuffle2_imm_128::<0b10>(rhs)
+    }
+
+    /// Concatenates the upper half of the first register with
+    /// the lower half of the second register.
+    #[inline(always)]
+    pub fn concat_hi_lo(self, rhs: Self) -> Self {
+        self.shuffle2_imm_128::<0b01>(rhs)
+    }
+
+    /// Concatenates the upper half of the first register with
+    /// the upper half of the second register.
+    #[inline(always)]
+    pub fn concat_hi_hi(self, rhs: Self) -> Self {
+        self.shuffle2_imm_128::<0b11>(rhs)
     }
 }
 
 impl<T: SimdElement, A: Arch> Simd<T, A> {
     #[inline(always)]
-    pub fn permute_8(self, indices: Simd<u8, A>) -> Self {
-        unsafe { Self::new(self.data.permute_8(indices.data)) }
-    }
-
-    #[inline(always)]
-    pub fn permute_8_pattern_32(self, indices: [u8; 4]) -> Self {
+    pub fn shuffle_8_pattern_32(self, indices: [u8; 4]) -> Self {
         let pattern = u32::from_ne_bytes(indices);
-        let pattern_vec = Simd::<u32, A>::splat(pattern);
-        unsafe { Self::new(self.data.permute_8(pattern_vec.data)) }
+        let pattern_vec = Simd::<u32, A>::splat(pattern).raw_cast();
+        self.shuffle_8(pattern_vec)
     }
 }
 

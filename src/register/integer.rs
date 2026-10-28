@@ -1,7 +1,5 @@
 use std::ops::*;
 
-use num_traits::NumCast;
-
 use crate::architectures::interface::*;
 use crate::register::Simd;
 use crate::simd_types::*;
@@ -46,9 +44,7 @@ impl<T: SimdInteger, A: Arch> Not for Simd<T, A> {
 }
 
 // === Shifts ===
-impl<T: SimdIntegerNotByte, A: Arch> Shl<Simd<<T as SimdInteger>::Unsigned, A>>
-    for Simd<T, A>
-{
+impl<T: SimdIntegerNotByte, A: Arch> Shl<Simd<<T as SimdInteger>::Unsigned, A>> for Simd<T, A> {
     type Output = Self;
     #[inline(always)]
     fn shl(self, rhs: Simd<<T as SimdInteger>::Unsigned, A>) -> Self {
@@ -63,9 +59,7 @@ impl<T: SimdIntegerNotByte, A: Arch> Shl<Simd<<T as SimdInteger>::Unsigned, A>>
     }
 }
 
-impl<T: SimdIntegerNotByte, A: Arch> Shr<Simd<<T as SimdInteger>::Unsigned, A>>
-    for Simd<T, A>
-{
+impl<T: SimdIntegerNotByte, A: Arch> Shr<Simd<<T as SimdInteger>::Unsigned, A>> for Simd<T, A> {
     type Output = Self;
     #[inline(always)]
     fn shr(self, rhs: Simd<<T as SimdInteger>::Unsigned, A>) -> Self {
@@ -89,8 +83,14 @@ impl<T: SimdIntegerNotByte, A: Arch> Shl<usize> for Simd<T, A> {
     type Output = Self;
     #[inline(always)]
     fn shl(self, rhs: usize) -> Self {
-        let shift = Simd::<<T as SimdInteger>::Unsigned, A>::splat(NumCast::from(rhs).unwrap());
-        self << shift
+        unsafe {
+            Self::new(match T::BIT_SIZE {
+                BitSize::Size64 => self.data.sll_64(rhs as u32),
+                BitSize::Size32 => self.data.sll_32(rhs as u32),
+                BitSize::Size16 => self.data.sll_16(rhs as u32),
+                _ => unreachable!(),
+            })
+        }
     }
 }
 
@@ -98,8 +98,107 @@ impl<T: SimdIntegerNotByte, A: Arch> Shr<usize> for Simd<T, A> {
     type Output = Self;
     #[inline(always)]
     fn shr(self, rhs: usize) -> Self {
-        let shift = Simd::<<T as SimdInteger>::Unsigned, A>::splat(NumCast::from(rhs).unwrap());
-        self >> shift
+        unsafe {
+            Self::new(match T::TYPE {
+                SimdType::U64 => self.data.srl_64(rhs as u32),
+                SimdType::U32 => self.data.srl_32(rhs as u32),
+                SimdType::U16 => self.data.srl_16(rhs as u32),
+                SimdType::I64 => self.data.sra_64(rhs as u32),
+                SimdType::I32 => self.data.sra_32(rhs as u32),
+                SimdType::I16 => self.data.sra_16(rhs as u32),
+                _ => unreachable!(),
+            })
+        }
+    }
+}
+
+// === Immediate shifts ===
+
+impl<T: SimdIntegerNotByte, A: Arch> Simd<T, A> {
+    #[inline(always)]
+    pub fn shift_left<const N: i32>(self) -> Self {
+        unsafe {
+            Self::new(match T::BIT_SIZE {
+                BitSize::Size64 => self.data.slli_64::<N>(),
+                BitSize::Size32 => self.data.slli_32::<N>(),
+                BitSize::Size16 => self.data.slli_16::<N>(),
+                _ => unreachable!(),
+            })
+        }
+    }
+
+    #[inline(always)]
+    pub fn shift_right<const N: i32>(self) -> Self {
+        unsafe {
+            Self::new(match T::TYPE {
+                SimdType::U64 => self.data.srli_64::<N>(),
+                SimdType::U32 => self.data.srli_32::<N>(),
+                SimdType::U16 => self.data.srli_16::<N>(),
+                SimdType::I64 => self.data.srai_64::<N>(),
+                SimdType::I32 => self.data.srai_32::<N>(),
+                SimdType::I16 => self.data.srai_16::<N>(),
+                _ => unreachable!(),
+            })
+        }
+    }
+}
+
+// === Arbitrary shifts ===
+
+impl<T: SimdElement, A: Arch> Simd<T, A> {
+    /// Shift left logical on 64-bit lanes. Fills in
+    /// incoming bits with zeroes.
+    #[inline(always)]
+    pub fn shift_ll_64<const N: i32>(self) -> Self {
+        unsafe { Self::new(self.data.slli_64::<N>()) }
+    }
+    /// Shift left logical on 32-bit lanes. Fills in
+    /// incoming bits with zeroes.
+    #[inline(always)]
+    pub fn shift_ll_32<const N: i32>(self) -> Self {
+        unsafe { Self::new(self.data.slli_32::<N>()) }
+    }
+    /// Shift left logical on 16-bit lanes. Fills in
+    /// incoming bits with zeroes.
+    #[inline(always)]
+    pub fn shift_ll_16<const N: i32>(self) -> Self {
+        unsafe { Self::new(self.data.slli_16::<N>()) }
+    }
+    /// Shift right logical on 64-bit lanes. Fills in
+    /// incoming bits with zeroes.
+    #[inline(always)]
+    pub fn shift_rl_64<const N: i32>(self) -> Self {
+        unsafe { Self::new(self.data.srli_64::<N>()) }
+    }
+    /// Shift right logical on 32-bit lanes. Fills in
+    /// incoming bits with zeroes.
+    #[inline(always)]
+    pub fn shift_rl_32<const N: i32>(self) -> Self {
+        unsafe { Self::new(self.data.srli_32::<N>()) }
+    }
+    /// Shift right logical on 16-bit lanes. Fills in
+    /// incoming bits with zeroes.
+    #[inline(always)]
+    pub fn shift_rl_16<const N: i32>(self) -> Self {
+        unsafe { Self::new(self.data.srli_16::<N>()) }
+    }
+    /// Shift right arithmetic on 64-bit lanes. Fills in
+    /// incoming bits with ones.
+    #[inline(always)]
+    pub fn shift_ra_64<const N: i32>(self) -> Self {
+        unsafe { Self::new(self.data.srai_64::<N>()) }
+    }
+    /// Shift right arithmetic on 32-bit lanes. Fills in
+    /// incoming bits with ones.
+    #[inline(always)]
+    pub fn shift_ra_32<const N: i32>(self) -> Self {
+        unsafe { Self::new(self.data.srai_32::<N>()) }
+    }
+    /// Shift right arithmetic on 16-bit lanes. Fills in
+    /// incoming bits with ones.
+    #[inline(always)]
+    pub fn shift_ra_16<const N: i32>(self) -> Self {
+        unsafe { Self::new(self.data.srai_16::<N>()) }
     }
 }
 
@@ -137,28 +236,6 @@ impl<T: SimdFloat, A: Arch> Div for Simd<T, A> {
     }
 }
 
-// TODO TODO
-// impl<T: SimdInteger, A: SimdAamily> Rem for Simd<T, A> {
-//     type Output = Self;
-//     #[inline(always)]
-//     fn rem(self, rhs: Self) -> Self {
-//         Self::new(
-//             match T::TYPE {
-//                 SimdType::F64 => self.data.f64_sub(rhs.data),
-//                 SimdType::F32 => self.data.f32_sub(rhs.data),
-//                 SimdType::I64 => self.data.i64_sub(rhs.data),
-//                 SimdType::I32 => self.data.i32_sub(rhs.data),
-//                 SimdType::I16 => self.data.i16_sub(rhs.data),
-//                 SimdType::I8 => self.data.i8_sub(rhs.data),
-//                 SimdType::U64 => self.data.i64_sub(rhs.data),
-//                 SimdType::U32 => self.data.i32_sub(rhs.data),
-//                 SimdType::U16 => self.data.i16_sub(rhs.data),
-//                 SimdType::U8 => self.data.i8_sub(rhs.data),
-//             }
-//         )
-//     }
-// }
-
 // === Casts ===
 
 impl<T: SimdInteger + HasSigned, A: Arch> Simd<T, A> {
@@ -181,14 +258,3 @@ impl<T: SimdInteger + HasFloat, A: Arch> Simd<T, A> {
         unsafe { Simd::new(self.data.int_to_float()) }
     }
 }
-
-// === Clamp ===
-
-// impl<T: SimdElement, A: SimdAamily> Simd<T, A> {
-//     #[inline(always)]
-//     pub fn clamp(self, min: T, max: T) -> Self {
-//         let min_vec = Self::splat(min);
-//         let max_vec = Self::splat(max);
-//         self.blendself.simd_lt(min_vec)
-//     }
-// }

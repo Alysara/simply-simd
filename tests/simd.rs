@@ -43,20 +43,163 @@ simd_vec_tests!(vblend_32_test, [[f32, f32 -> f32]], |x, y| {
     (x.simd_gt(y)).select(x, y)
 });
 
+simd_vec_tests!(blend_16_16_test_1, [[u16, u16 -> u16]], |x, y| {
+    x.blend_16::<0b01101100>(y)
+});
+
+simd_vec_tests!(blend_16_16_test_2, [[u16, u16 -> u16]], |x, y| {
+    x.blend_16::<0b10011100>(y)
+});
+
+simd_vec_tests!(blend_16_16_test_3, [[u16, u16 -> u16]], |x, y| {
+    x.blend_16::<0b10101010>(y)
+});
+
 simd_vec_tests!(blend_32_test_1, [[f32, f32 -> f32]], |x, y| {
-    x.blend::<0b0110>(y)
+    x.blend_32::<0b0110>(y)
 });
 
-simd_vec_tests!(blend_32_test_2, [[f32, f32 -> f32]], |x, y| {
-    x.blend::<0b1001>(y)
+simd_vec_tests!(blend_32_32_test_2, [[f32, f32 -> f32]], |x, y| {
+    x.blend_32::<0b1001>(y)
 });
 
-simd_vec_tests!(blend_32_test_3, [[f32, f32 -> f32]], |x, y| {
-    x.blend::<0b1010>(y)
+simd_vec_tests!(blend_32_32_test_3, [[f32, f32 -> f32]], |x, y| {
+    x.blend_32::<0b1010>(y)
+});
+
+simd_vec_tests!(blend_64_64_test_1, [[f64, f64 -> f64]], |x, y| {
+    x.blend_64::<0b00>(y)
+});
+
+simd_vec_tests!(blend_64_64_test_2, [[f64, f64 -> f64]], |x, y| {
+    x.blend_64::<0b01>(y)
+});
+
+simd_vec_tests!(blend_64_64_test_3, [[f64, f64 -> f64]], |x, y| {
+    x.blend_64::<0b10>(y)
+});
+
+simd_vec_tests!(blend_64_64_test_4, [[f64, f64 -> f64]], |x, y| {
+    x.blend_64::<0b11>(y)
 });
 
 simd_vec_tests!(to_bits_test, [[f32, f32 -> f32]], |x, y| {
     Simd::splat(x.simd_gt(y).to_bits() as f32)
+});
+
+// === Imm Permutes/Shuffles ===
+
+simd_vec_tests!(permute_imm_128_test_1, [f32, f64, u16, u32], |x| {
+    x.permute_imm_128::<0b00>()
+});
+simd_vec_tests!(permute_imm_128_test_2, [f32, f64, u16, u32], |x| {
+    x.permute_imm_128::<0b01>()
+});
+simd_vec_tests!(permute_imm_128_test_3, [f32, f64, u16, u32], |x| {
+    x.permute_imm_128::<0b10>()
+});
+simd_vec_tests!(permute_imm_128_test_4, [f32, f64, u16, u32], |x| {
+    x.permute_imm_128::<0b11>()
+});
+
+simd_vec_tests!(shuffle_imm_64_test_1, [f32, f64, u16, u32], |x| {
+    x.shuffle_imm_64::<0b00>()
+});
+simd_vec_tests!(shuffle_imm_64_test_2, [f32, f64, u16, u32], |x| {
+    x.shuffle_imm_64::<0b01>()
+});
+simd_vec_tests!(shuffle_imm_64_test_3, [f32, f64, u16, u32], |x| {
+    x.shuffle_imm_64::<0b10>()
+});
+simd_vec_tests!(shuffle_imm_64_test_4, [f32, f64, u16, u32], |x| {
+    x.shuffle_imm_64::<0b11>()
+});
+
+simd_vec_tests!(shuffle_imm_32_test_1, [f32, f64, u16, u32], |x| {
+    x.shuffle_imm_32::<0xFF>()
+});
+simd_vec_tests!(shuffle_imm_32_test_2, [f32, f64, u16, u32], |x| {
+    x.shuffle_imm_32::<0x0>()
+});
+simd_vec_tests!(shuffle_imm_32_test_3, [f32, f64, u16, u32], |x| {
+    x.shuffle_imm_32::<0x47>()
+});
+simd_vec_tests!(shuffle_imm_32_test_4, [f32, f64, u16, u32], |x| {
+    x.shuffle_imm_32::<0x03>()
+});
+
+simd_vec_tests!(shuffle_imm_16_test_1, [f32, f64, u16, u32], |x| {
+    x.shuffle_imm_16::<0xFF>()
+});
+simd_vec_tests!(shuffle_imm_16_test_2, [f32, f64, u16, u32], |x| {
+    x.shuffle_imm_16::<0x0>()
+});
+simd_vec_tests!(shuffle_imm_16_test_3, [f32, f64, u16, u32], |x| {
+    x.shuffle_imm_16::<0x47>()
+});
+simd_vec_tests!(shuffle_imm_16_test_4, [f32, f64, u16, u32], |x| {
+    x.shuffle_imm_16::<0x03>()
+});
+
+// === Imm Shuffle2 ===
+
+simd_vec_tests!(shuffle2_imm_half_test_1, [f32, f64, u16, u32], |x, y| {
+    x.permute2_imm_half::<0b00>(y)
+});
+simd_vec_tests!(shuffle2_imm_half_test_2, [f32, f64, u16, u32], |x, y| {
+    x.permute2_imm_half::<0b01>(y)
+});
+simd_vec_tests!(shuffle2_imm_half_test_3, [f32, f64, u16, u32], |x, y| {
+    x.permute2_imm_half::<0b10>(y)
+});
+simd_vec_tests!(shuffle2_imm_half_test_4, [f32, f64, u16, u32], |x, y| {
+    x.permute2_imm_half::<0b11>(y)
+});
+
+simd_vec_tests!(shuffle2_imm_128_test_1, [f32, f64, u16, u32], |x, y| {
+    x.shuffle2_imm_128::<0b00>(y)
+});
+simd_vec_tests!(shuffle2_imm_128_test_2, [f32, f64, u16, u32], |x, y| {
+    x.shuffle2_imm_128::<0b01>(y)
+});
+simd_vec_tests!(shuffle2_imm_128_test_3, [f32, f64, u16, u32], |x, y| {
+    x.shuffle2_imm_128::<0b10>(y)
+});
+simd_vec_tests!(shuffle2_imm_128_test_4, [f32, f64, u16, u32], |x, y| {
+    x.shuffle2_imm_128::<0b11>(y)
+});
+
+simd_vec_tests!(shuffle2_imm_64_test_1, [f32, f64, u16, u32], |x, y| {
+    x.shuffle2_imm_64::<0b00>(y)
+});
+simd_vec_tests!(shuffle2_imm_64_test_2, [f32, f64, u16, u32], |x, y| {
+    x.shuffle2_imm_64::<0b01>(y)
+});
+simd_vec_tests!(shuffle2_imm_64_test_3, [f32, f64, u16, u32], |x, y| {
+    x.shuffle2_imm_64::<0b10>(y)
+});
+simd_vec_tests!(shuffle2_imm_64_test_4, [f32, f64, u16, u32], |x, y| {
+    x.shuffle2_imm_64::<0b11>(y)
+});
+
+simd_vec_tests!(shuffle2_imm_32_test_1, [f32, f64, u16, u32], |x, y| {
+    x.shuffle2_imm_32::<0xFF>(y)
+});
+simd_vec_tests!(shuffle2_imm_32_test_2, [f32, f64, u16, u32], |x, y| {
+    x.shuffle2_imm_32::<0x0>(y)
+});
+simd_vec_tests!(shuffle2_imm_32_test_3, [f32, f64, u16, u32], |x, y| {
+    x.shuffle2_imm_32::<0x47>(y)
+});
+simd_vec_tests!(shuffle2_imm_32_test_4, [f32, f64, u16, u32], |x, y| {
+    x.shuffle2_imm_32::<0x03>(y)
+});
+
+// === Variable permutes and shuffles ===
+
+simd_vec_tests!(permute_64_test, [[f64, u64 -> f64], [i64, u64 -> i64], [u64, u64 -> u64]], |x, y| {
+    let mask = Simd::<u64, A>::splat((A::SIMD_WIDTH as u64 / 8) - 1);
+    x.permute_64(y & mask)
 });
 
 simd_vec_tests!(permute_32_test, [[f32, u32 -> f32], [i32, u32 -> i32], [u32, u32 -> u32]], |x, y| {
@@ -64,9 +207,112 @@ simd_vec_tests!(permute_32_test, [[f32, u32 -> f32], [i32, u32 -> i32], [u32, u3
     x.permute_32(y & mask)
 });
 
-simd_vec_tests!(permute_8_test, [[f32, u8 -> f32], [i32, u8 -> i32], [u64, u8 -> u64], [u8, u8 -> u8]], |x, y| {
+simd_vec_tests!(shuffle_16_test, [[f32, u16 -> f32], [i32, u16 -> i32], [u64, u16 -> u64], [u16, u16 -> u16]], |x, y| {
+    let mask = Simd::<u16, A>::splat((A::SIMD_WIDTH as u16 / 2) - 1);
+    x.shuffle_16(y & mask)
+});
+
+simd_vec_tests!(shuffle_8_test, [[f32, u8 -> f32], [i32, u8 -> i32], [u64, u8 -> u64], [u8, u8 -> u8]], |x, y| {
     let mask = Simd::<u8, A>::splat((A::SIMD_WIDTH as u8) - 1);
-    x.permute_8(y & mask)
+    x.shuffle_8(y & mask)
+});
+
+// === Interleaves ===
+
+simd_vec_tests!(interleave_lower_128_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_lower_128(y)
+});
+simd_vec_tests!(interleave_lower_64_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_lower_64(y)
+});
+simd_vec_tests!(interleave_lower_32_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_lower_32(y)
+});
+simd_vec_tests!(interleave_lower_16_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_lower_16(y)
+});
+simd_vec_tests!(interleave_lower_8_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_lower_8(y)
+});
+
+simd_vec_tests!(interleave_upper_128_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_upper_128(y)
+});
+simd_vec_tests!(interleave_upper_64_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_upper_64(y)
+});
+simd_vec_tests!(interleave_upper_32_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_upper_32(y)
+});
+simd_vec_tests!(interleave_upper_16_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_upper_16(y)
+});
+simd_vec_tests!(interleave_upper_8_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_upper_8(y)
+});
+
+simd_vec_tests!(interleave_even_128_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_even_128(y)
+});
+simd_vec_tests!(interleave_even_64_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_even_64(y)
+});
+simd_vec_tests!(interleave_even_32_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_even_32(y)
+});
+simd_vec_tests!(interleave_even_16_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_even_16(y)
+});
+simd_vec_tests!(interleave_even_8_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_even_8(y)
+});
+
+simd_vec_tests!(interleave_odd_128_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_odd_128(y)
+});
+simd_vec_tests!(interleave_odd_64_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_odd_64(y)
+});
+simd_vec_tests!(interleave_odd_32_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_odd_32(y)
+});
+simd_vec_tests!(interleave_odd_16_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_odd_16(y)
+});
+simd_vec_tests!(interleave_odd_8_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_odd_8(y)
+});
+
+simd_vec_tests!(deinterleave_even_128_test, [f32, f64, u16, u32], |x, y| {
+    x.deinterleave_even_128(y)
+});
+simd_vec_tests!(deinterleave_even_64_test, [f32, f64, u16, u32], |x, y| {
+    x.deinterleave_even_64(y)
+});
+simd_vec_tests!(deinterleave_even_32_test, [f32, f64, u16, u32], |x, y| {
+    x.deinterleave_even_32(y)
+});
+simd_vec_tests!(deinterleave_even_16_test, [f32, f64, u16, u32], |x, y| {
+    x.deinterleave_even_16(y)
+});
+simd_vec_tests!(deinterleave_even_8_test, [f32, f64, u16, u32], |x, y| {
+    x.deinterleave_even_8(y)
+});
+
+simd_vec_tests!(deinterleave_odd_128_test, [f32, f64, u16, u32], |x, y| {
+    x.deinterleave_odd_128(y)
+});
+simd_vec_tests!(deinterleave_odd_64_test, [f32, f64, u16, u32], |x, y| {
+    x.deinterleave_odd_64(y)
+});
+simd_vec_tests!(deinterleave_odd_32_test, [f32, f64, u16, u32], |x, y| {
+    x.deinterleave_odd_32(y)
+});
+simd_vec_tests!(deinterleave_odd_16_test, [f32, f64, u16, u32], |x, y| {
+    x.deinterleave_odd_16(y)
+});
+simd_vec_tests!(deinterleave_odd_8_test, [f32, f64, u16, u32], |x, y| {
+    x.deinterleave_odd_8(y)
 });
 
 simd_vec_tests!(gather_32_test, [[u32 -> f32]], |x| {
@@ -117,14 +363,20 @@ simd_vec_tests!(not_mask_test, [f32, f64], |x, y| {
 });
 
 // === Min/Max ===
-simd_vec_tests!(min_test, [f32, f64, u8, u16, u32, i8, i16, i32], |x, y| {
-    x.min(y)
-});
-simd_vec_tests!(max_test, [f32, f64, u8, u16, u32, i8, i16, i32], |x, y| {
-    x.max(y)
-});
+
+simd_vec_tests!(
+    min_test,
+    [f32, f64, u8, u16, u32, u64, i8, i16, i32, i64],
+    |x, y| { x.min(y) }
+);
+simd_vec_tests!(
+    max_test,
+    [f32, f64, u8, u16, u32, u64, i8, i16, i32, i64],
+    |x, y| { x.max(y) }
+);
 
 // === Arithmetic ===
+
 simd_vec_tests!(
     add_test,
     [u8, u16, u32, u64, i8, i16, i32, i64, f32, f64],
@@ -144,9 +396,13 @@ simd_vec_tests!(xor_test, [u8, u16, u32, u64], |x, y| { x ^ y });
 simd_vec_tests!(andnot_test, [u8, u16, u32, u64], |x, y| { x.andnot(y) });
 simd_vec_tests!(not_test, [u8, u16, u32, u64], |x| { !x });
 
-// TODO: VARIABLE SHIATS DO NOT WORK ON SSE!
-simd_vec_tests!(shl_scalar_test, [u32, i32], |x| { x << 10 });
-simd_vec_tests!(shr_scalar_test, [u32, i32], |x| { x >> 10 });
+simd_vec_tests!(shl_scalar_test, [u64, i64, u32, i32, u16, i16], |x| {
+    x << 10
+});
+simd_vec_tests!(shr_scalar_test, [u64, i64, u32, i32, u16, i16], |x| {
+    x >> 10
+});
+
 simd_vec_tests!(shl_variable_test,
     [[u32, u32 -> u32], [i32, u32 -> i32]],
     |x, y| { x << (y.raw_cast() & Simd::splat(15))
@@ -154,6 +410,19 @@ simd_vec_tests!(shl_variable_test,
 simd_vec_tests!(shr_variable_test,
     [[u32, u32 -> u32], [i32, u32 -> i32]],
     |x, y| { x >> (y.raw_cast() & Simd::splat(15))
+});
+
+simd_vec_tests!(shl_imm_test_1, [u64, i64, u32, i32, u16, i16], |x| {
+    x.shift_left::<2>()
+});
+simd_vec_tests!(shl_imm_test_2, [u64, i64, u32, i32, u16, i16], |x| {
+    x.shift_left::<11>()
+});
+simd_vec_tests!(shr_imm_test_1, [u64, i64, u32, i32, u16, i16], |x| {
+    x.shift_right::<2>()
+});
+simd_vec_tests!(shr_imm_test_2, [u64, i64, u32, i32, u16, i16], |x| {
+    x.shift_right::<11>()
 });
 
 // === Clamp ===

@@ -65,6 +65,15 @@ macro_rules! scalar_func_op {
     };
 }
 
+macro_rules! map_scalar_op {
+    ($func:ident, $type:ty, $op:ident, $size:expr) => {
+        #[inline(always)]
+        unsafe fn $func(self, rhs: Self) -> Self {
+            scalar_func_op!($type, $op, self, rhs, $size)
+        }
+    }
+}
+
 macro_rules! scalar_self_op {
     ($type:ty, $op:ident, $self:ident, $size:expr) => {
         unsafe {
@@ -102,23 +111,6 @@ macro_rules! scalar_fma_expr_op {
     };
 }
 
-macro_rules! scalar_cmp {
-    {$type:ty, $op:tt, $self:ident, $rhs:ident, $size:expr} => {
-        unsafe {
-            let mut result = ScalarMask::<$size>([false; $size]);
-
-            let self_ptr = $self.0.as_ptr() as *const $type;
-            let rhs_ptr = $rhs.0.as_ptr() as *const $type;
-
-            for i in 0..($size / size_of::<$type>()) {
-                result.0[i] = *self_ptr.add(i) $op *rhs_ptr.add(i);
-            }
-
-            result
-        }
-    }
-}
-
 macro_rules! scalar_splat {
     {$type:ty, $self:ident, $val:expr, $size:expr} => {
         unsafe {
@@ -134,7 +126,23 @@ macro_rules! scalar_splat {
     }
 }
 
-impl<const N: usize> SimdAddImpl for ScalarReg<N> {
+macro_rules! scalar_shift {
+    ($ty:ty, $shift:tt, $self:ident, $rhs:ident, $size:expr) => {
+        unsafe {
+            let mut new = ScalarReg::<$size>([0; $size]);
+            let new_ptr = new.0.as_mut_ptr() as *mut $ty;
+            let old_ptr = $self.0.as_ptr() as *const $ty;
+
+            for i in 0..(N / size_of::<$ty>()) {
+                *new_ptr.add(i) = *old_ptr.add(i) $shift $rhs as usize;
+            }
+
+            new
+        }
+    }
+}
+
+impl<const N: usize> SimdAdd for ScalarReg<N> {
     #[inline(always)]
     unsafe fn f64_add(self, rhs: Self) -> Self {
         scalar_token_op!(f64, +, self, rhs, N)
@@ -161,7 +169,7 @@ impl<const N: usize> SimdAddImpl for ScalarReg<N> {
     }
 }
 
-impl<const N: usize> SimdSubImpl for ScalarReg<N> {
+impl<const N: usize> SimdSub for ScalarReg<N> {
     #[inline(always)]
     unsafe fn f64_sub(self, rhs: Self) -> Self {
         scalar_token_op!(f64, -, self, rhs, N)
@@ -188,7 +196,7 @@ impl<const N: usize> SimdSubImpl for ScalarReg<N> {
     }
 }
 
-impl<const N: usize> SimdMulImpl for ScalarReg<N> {
+impl<const N: usize> SimdMul for ScalarReg<N> {
     #[inline(always)]
     unsafe fn f64_mul(self, rhs: Self) -> Self {
         scalar_token_op!(f64, *, self, rhs, N)
@@ -207,7 +215,7 @@ impl<const N: usize> SimdMulImpl for ScalarReg<N> {
     }
 }
 
-impl<const N: usize> SimdDivImpl for ScalarReg<N> {
+impl<const N: usize> SimdDiv for ScalarReg<N> {
     #[inline(always)]
     unsafe fn f64_div(self, rhs: Self) -> Self {
         scalar_token_op!(f64, /, self, rhs, N)
@@ -218,7 +226,7 @@ impl<const N: usize> SimdDivImpl for ScalarReg<N> {
     }
 }
 
-impl<const N: usize> SimdBitwiseImpl for ScalarReg<N> {
+impl<const N: usize> SimdBitwise for ScalarReg<N> {
     #[inline(always)]
     unsafe fn and(self, rhs: Self) -> Self {
         scalar_token_op!(u64, &, self, rhs, N)
@@ -241,46 +249,64 @@ impl<const N: usize> SimdBitwiseImpl for ScalarReg<N> {
     }
 }
 
-impl<const N: usize> SimdShiftImpl for ScalarReg<N> {
-    #[inline(always)]
-    unsafe fn sllv_64(self, rhs: Self) -> Self {
-        scalar_token_op_usize_rhs!(u64, <<, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn srlv_64(self, rhs: Self) -> Self {
-        scalar_token_op_usize_rhs!(u64, >>, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn srav_64(self, rhs: Self) -> Self {
-        scalar_token_op_usize_rhs!(i64, >>, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn sllv_32(self, rhs: Self) -> Self {
-        scalar_token_op_usize_rhs!(u32, <<, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn srlv_32(self, rhs: Self) -> Self {
-        scalar_token_op_usize_rhs!(u32, >>, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn srav_32(self, rhs: Self) -> Self {
-        scalar_token_op_usize_rhs!(i32, >>, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn sllv_16(self, rhs: Self) -> Self {
-        scalar_token_op_usize_rhs!(u16, <<, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn srlv_16(self, rhs: Self) -> Self {
-        scalar_token_op_usize_rhs!(u16, >>, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn srav_16(self, rhs: Self) -> Self {
-        scalar_token_op_usize_rhs!(i16, >>, self, rhs, N)
-    }
+macro_rules! map_scalar_shift {
+    ($func:ident, $ty:ty, $shift:tt) => {
+        #[inline(always)]
+        unsafe fn $func(self, rhs: u32) -> Self {
+            scalar_shift!($ty, $shift, self, rhs, N)
+        }
+    };
 }
 
-impl<const N: usize> SimdLoadImpl for ScalarReg<N> {
+macro_rules! map_scalar_ishift {
+    ($func:ident, $ty:ty, $shift:tt) => {
+        #[inline(always)]
+        unsafe fn $func<const M: i32>(self) -> Self {
+            scalar_shift!($ty, $shift, self, M, N)
+        }
+    };
+}
+
+macro_rules! map_scalar_vshift {
+    ($func:ident, $ty:ty, $shift:tt) => {
+        #[inline(always)]
+        unsafe fn $func(self, rhs: Self) -> Self {
+            scalar_token_op_usize_rhs!($ty, $shift, self, rhs, N)
+        }
+    };
+}
+
+impl<const N: usize> SimdShift for ScalarReg<N> {
+    map_scalar_shift!(sll_64, u64, <<);
+    map_scalar_shift!(srl_64, u64, >>);
+    map_scalar_shift!(sra_64, i64, >>);
+    map_scalar_shift!(sll_32, u32, <<);
+    map_scalar_shift!(srl_32, u32, >>);
+    map_scalar_shift!(sra_32, i32, >>);
+    map_scalar_shift!(sll_16, u16, <<);
+    map_scalar_shift!(srl_16, u16, >>);
+    map_scalar_shift!(sra_16, i16, >>);
+    map_scalar_ishift!(slli_64, u64, <<);
+    map_scalar_ishift!(srli_64, u64, >>);
+    map_scalar_ishift!(srai_64, i64, >>);
+    map_scalar_ishift!(slli_32, u32, <<);
+    map_scalar_ishift!(srli_32, u32, >>);
+    map_scalar_ishift!(srai_32, i32, >>);
+    map_scalar_ishift!(slli_16, u16, <<);
+    map_scalar_ishift!(srli_16, u16, >>);
+    map_scalar_ishift!(srai_16, i16, >>);
+    map_scalar_vshift!(sllv_64, u64, <<);
+    map_scalar_vshift!(srlv_64, u64, >>);
+    map_scalar_vshift!(srav_64, i64, >>);
+    map_scalar_vshift!(sllv_32, u32, <<);
+    map_scalar_vshift!(srlv_32, u32, >>);
+    map_scalar_vshift!(srav_32, i32, >>);
+    map_scalar_vshift!(sllv_16, u16, <<);
+    map_scalar_vshift!(srlv_16, u16, >>);
+    map_scalar_vshift!(srav_16, i16, >>);
+}
+
+impl<const N: usize> SimdLoad for ScalarReg<N> {
     type MaskType = ScalarMask<N>;
     #[inline(always)]
     unsafe fn load_aligned<T>(ptr: *const T) -> Self {
@@ -320,7 +346,7 @@ impl<const N: usize> SimdLoadImpl for ScalarReg<N> {
     }
 }
 
-impl<const N: usize> SimdStoreImpl for ScalarReg<N> {
+impl<const N: usize> SimdStore for ScalarReg<N> {
     type MaskType = ScalarMask<N>;
     #[inline(always)]
     unsafe fn store_aligned<T>(self, ptr: *mut T) {
@@ -358,14 +384,14 @@ impl<const N: usize> SimdStoreImpl for ScalarReg<N> {
     }
 }
 
-impl<const N: usize> SimdZeroImpl for ScalarReg<N> {
+impl<const N: usize> SimdZero for ScalarReg<N> {
     #[inline(always)]
     unsafe fn zero() -> Self {
         Self([0; N])
     }
 }
 
-impl<const N: usize> SimdFloatCastsImpl for ScalarReg<N> {
+impl<const N: usize> SimdFloatCasts for ScalarReg<N> {
     #[inline(always)]
     unsafe fn float_to_int_trunc(self) -> Self {
         unsafe {
@@ -392,7 +418,7 @@ impl<const N: usize> SimdFloatCastsImpl for ScalarReg<N> {
     }
 }
 
-impl<const N: usize> SimdIntCastsImpl for ScalarReg<N> {
+impl<const N: usize> SimdIntCasts for ScalarReg<N> {
     #[inline(always)]
     unsafe fn int_to_float(self) -> Self {
         unsafe {
@@ -407,27 +433,48 @@ impl<const N: usize> SimdIntCastsImpl for ScalarReg<N> {
     }
 }
 
-impl<const N: usize> SimdPermuteImpl for ScalarReg<N> {
-    #[inline(always)]
-    unsafe fn permute_32(self, rhs: Self) -> Self {
+impl<const N: usize> SimdPermute for ScalarReg<N> {
+    unsafe fn vpermute_64(self, rhs: Self) -> Self {
+        unsafe {
+            let mut new = Self([0; N]);
+            let new_ptr = new.0.as_mut_ptr() as *mut u64;
+            let self_ptr = self.0.as_ptr() as *const u64;
+            let indices_ptr = rhs.0.as_ptr() as *const u64;
+            for i in 0..(N / 8) {
+                let index = (*indices_ptr.add(i) as usize) & (N / 8 - 1);
+                *new_ptr.add(i) = *self_ptr.add(index);
+            }
+            new
+        }
+    }
+    unsafe fn vpermute_32(self, rhs: Self) -> Self {
         unsafe {
             let mut new = Self([0; N]);
             let new_ptr = new.0.as_mut_ptr() as *mut u32;
             let self_ptr = self.0.as_ptr() as *const u32;
             let indices_ptr = rhs.0.as_ptr() as *const u32;
             for i in 0..(N / 4) {
-                let index = *indices_ptr.add(i) as usize;
-                *new_ptr.add(i) = if index < (N / 4) {
-                    *self_ptr.add(index)
-                } else {
-                    0
-                };
+                let index = (*indices_ptr.add(i) as usize) & (N / 4 - 1);
+                *new_ptr.add(i) = *self_ptr.add(index);
             }
             new
         }
     }
-    #[inline(always)]
-    unsafe fn permute_8(self, rhs: Self) -> Self {
+    unsafe fn vshuffle_16(self, rhs: Self) -> Self {
+        unsafe {
+            let mut new = Self([0; N]);
+            let new_ptr = new.0.as_mut_ptr() as *mut u16;
+            let self_ptr = self.0.as_ptr() as *const u16;
+            let indices_ptr = rhs.0.as_ptr() as *const u16;
+            for i in 0..(N / 2) {
+                let lane_base = i & !7; // which 16-byte lane we're in (0 or 8)
+                let index = (*indices_ptr.add(i) as usize & 7) + lane_base;
+                *new_ptr.add(i) = *self_ptr.add(index);
+            }
+            new
+        }
+    }
+    unsafe fn vshuffle_8(self, rhs: Self) -> Self {
         unsafe {
             let mut new = Self([0; N]);
             let new_ptr = new.0.as_mut_ptr();
@@ -441,9 +488,142 @@ impl<const N: usize> SimdPermuteImpl for ScalarReg<N> {
             new
         }
     }
+    unsafe fn permute_128<const M: i32>(self) -> Self {
+        unsafe {
+            let mut new = Self([0; N]);
+            let lanes = N / 16;
+            let src = self.0.as_ptr();
+            let dst = new.0.as_mut_ptr();
+
+            for lane in 0..lanes {
+                let sel = ((M >> (2 * lane)) & (lanes as i32 - 1)) as usize;
+                core::ptr::copy_nonoverlapping(src.add(sel * 16), dst.add(lane * 16), 16);
+            }
+            new
+        }
+    }
+    unsafe fn shuffle_64<const M: i32>(self) -> Self {
+        unsafe {
+            let mut new = Self([0; N]);
+            let new_ptr = new.0.as_mut_ptr() as *mut u64;
+            let self_ptr = self.0.as_ptr() as *const u64;
+
+            let sel1 = (M & 1) as usize;
+            let sel2 = ((M >> 1) & 1) as usize;
+
+            for i in (0..(N / 8)).step_by(2) {
+                *new_ptr.add(i) = *self_ptr.add(i + sel1);
+                *new_ptr.add(i + 1) = *self_ptr.add(i + sel2);
+            }
+
+            new
+        }
+    }
+    unsafe fn shuffle_32<const M: i32>(self) -> Self {
+        unsafe {
+            let mut new = Self([0; N]);
+            let new_ptr = new.0.as_mut_ptr() as *mut u32;
+            let self_ptr = self.0.as_ptr() as *const u32;
+
+            for i in 0..(N / 4) {
+                let base = i & !3;
+                let sel = (M >> ((i & 3) * 2)) as usize & 3;
+                *new_ptr.add(i) = *self_ptr.add(base + sel);
+            }
+
+            new
+        }
+    }
+    unsafe fn shuffle_16<const M: i32>(self) -> Self {
+        unsafe {
+            let mut new = Self([0; N]);
+            let new_ptr = new.0.as_mut_ptr() as *mut u16;
+            let self_ptr = self.0.as_ptr() as *const u16;
+
+            for i in 0..(N / 2) {
+                let base = i & !3;
+                let sel = (M >> ((i & 3) * 2)) as usize & 3;
+                *new_ptr.add(i) = *self_ptr.add(base + sel);
+            }
+
+            new
+        }
+    }
+    unsafe fn permute2_half<const M: i32>(self, rhs: Self) -> Self {
+        unsafe {
+            let mut new = Self([0; N]);
+            let new_ptr = new.0.as_mut_ptr() as *mut u64;
+            let self_ptr = self.0.as_ptr() as *const u64;
+            let rhs_ptr = rhs.0.as_ptr() as *const u64;
+
+            for n in 0..2 {
+                let src = if n & 1 == 0 { self_ptr } else { rhs_ptr };
+                let base = n * (N / 16);
+                let sel = ((M >> n) & 1) as usize * (N / 16);
+                for i in 0..(N / 16) {
+                    *new_ptr.add(base + i) = *src.add(sel + i);
+                }
+            }
+
+            new
+        }
+    }
+    unsafe fn shuffle2_128<const M: i32>(self, rhs: Self) -> Self {
+        if N == 16 {
+            return self;
+        }
+
+        unsafe {
+            let mut new = Self([0; N]);
+            let new_ptr = new.0.as_mut_ptr() as *mut u64;
+            let self_ptr = self.0.as_ptr() as *const u64;
+            let rhs_ptr = rhs.0.as_ptr() as *const u64;
+
+            for i in 0..(N / 16) {
+                let idx = ((i & !1) + ((M >> (i & 1)) as usize & 1)) * 2;
+                let src = if i & 1 == 0 { self_ptr } else { rhs_ptr };
+                *new_ptr.add(i * 2) = *src.add(idx);
+                *new_ptr.add(i * 2 + 1) = *src.add(idx + 1);
+            }
+
+            new
+        }
+    }
+    unsafe fn shuffle2_64<const M: i32>(self, rhs: Self) -> Self {
+        unsafe {
+            let mut new = Self([0; N]);
+            let new_ptr = new.0.as_mut_ptr() as *mut u64;
+            let self_ptr = self.0.as_ptr() as *const u64;
+            let rhs_ptr = rhs.0.as_ptr() as *const u64;
+
+            for i in 0..(N / 8) {
+                let idx = (i & !1) + ((M >> (i & 1)) as usize & 1);
+                let src = if i & 1 == 0 { self_ptr } else { rhs_ptr };
+                *new_ptr.add(i) = *src.add(idx);
+            }
+
+            new
+        }
+    }
+    unsafe fn shuffle2_32<const M: i32>(self, rhs: Self) -> Self {
+        unsafe {
+            let mut new = Self([0; N]);
+            let new_ptr = new.0.as_mut_ptr() as *mut u32;
+            let self_ptr = self.0.as_ptr() as *const u32;
+            let rhs_ptr = rhs.0.as_ptr() as *const u32;
+
+            for i in 0..(N / 4) {
+                let idx = (i & !3) + ((M >> ((i & 3) * 2)) as usize & 3);
+                let src = if i & 2 == 0 { self_ptr } else { rhs_ptr };
+                *new_ptr.add(i) = *src.add(idx);
+            }
+
+            new
+        }
+    }
 }
 
-impl<const N: usize> SimdVariableBlendImpl for ScalarMask<N> {
+impl<const N: usize> SimdVariableBlend for ScalarMask<N> {
     type VecType = ScalarReg<N>;
     #[inline(always)]
     unsafe fn vblend_64(
@@ -488,6 +668,26 @@ impl<const N: usize> SimdVariableBlendImpl for ScalarMask<N> {
         }
     }
     #[inline(always)]
+    unsafe fn vblend_16(
+        self,
+        true_values: Self::VecType,
+        false_values: Self::VecType,
+    ) -> ScalarReg<N> {
+        unsafe {
+            let mut new = ScalarReg::<N>([0; N]);
+            let new_ptr = new.0.as_mut_ptr() as *mut u16;
+            let false_ptr = false_values.0.as_ptr() as *const u16;
+            let true_ptr = true_values.0.as_ptr() as *const u16;
+            for i in 0..(N / 2) {
+                *new_ptr.add(i) = match self.0[i] {
+                    true => *true_ptr.add(i),
+                    false => *false_ptr.add(i),
+                };
+            }
+            new
+        }
+    }
+    #[inline(always)]
     unsafe fn vblend_8(
         self,
         true_values: Self::VecType,
@@ -510,16 +710,17 @@ impl<const N: usize> SimdVariableBlendImpl for ScalarMask<N> {
     }
 }
 
-impl<const M: usize> SimdImmediateBlendImpl for ScalarReg<M> {
+impl<const M: usize> SimdImmediateBlend for ScalarReg<M> {
     #[inline(always)]
     unsafe fn blend_64<const N: i32>(self, false_values: Self) -> Self {
         unsafe {
+            let n = (N as u64 & 0b11) * 0x5555555555555555;
             let mut new = ScalarReg::<M>([0; M]);
             let new_ptr = new.0.as_mut_ptr() as *mut u64;
             let false_ptr = false_values.0.as_ptr() as *const u64;
             let true_ptr = self.0.as_ptr() as *const u64;
             for i in 0..(M >> 3) {
-                let cond = ((N >> i) & 1) == 1;
+                let cond = ((n >> i) & 1) == 1;
                 *new_ptr.add(i) = if cond {
                     *true_ptr.add(i)
                 } else {
@@ -532,12 +733,13 @@ impl<const M: usize> SimdImmediateBlendImpl for ScalarReg<M> {
     #[inline(always)]
     unsafe fn blend_32<const N: i32>(self, false_values: Self) -> Self {
         unsafe {
+            let n = (N as u64 & 0xF) * 0x1111111111111111;
             let mut new = ScalarReg::<M>([0; M]);
             let new_ptr = new.0.as_mut_ptr() as *mut u32;
             let false_ptr = false_values.0.as_ptr() as *const u32;
             let true_ptr = self.0.as_ptr() as *const u32;
             for i in 0..(M >> 2) {
-                let cond = ((N >> i) & 1) == 1;
+                let cond = ((n >> i) & 1) == 1;
                 *new_ptr.add(i) = if cond {
                     *true_ptr.add(i)
                 } else {
@@ -547,9 +749,316 @@ impl<const M: usize> SimdImmediateBlendImpl for ScalarReg<M> {
             new
         }
     }
+
+    #[inline(always)]
+    unsafe fn blend_16<const N: i32>(self, false_values: Self) -> Self {
+        unsafe {
+            let n = (N as u64 & 0xFF) * 0x0101010101010101;
+            let mut new = ScalarReg::<M>([0; M]);
+            let new_ptr = new.0.as_mut_ptr() as *mut u16;
+            let false_ptr = false_values.0.as_ptr() as *const u16;
+            let true_ptr = self.0.as_ptr() as *const u16;
+            for block in 0..(M >> 4) {
+                for i in 0..8 {
+                    let idx = block * 8 + i;
+                    let cond = ((n >> i) & 1) == 1;
+                    *new_ptr.add(idx) = if cond {
+                        *true_ptr.add(idx)
+                    } else {
+                        *false_ptr.add(idx)
+                    };
+                }
+            }
+            new
+        }
+    }
 }
 
-impl<const N: usize> SimdMulAddImpl for ScalarReg<N> {
+macro_rules! map_interleave_hilo {
+    ($func:ident, $ty:ty, $size:expr, $offset:expr) => {
+        #[inline(always)]
+        unsafe fn $func(self, rhs: Self) -> Self {
+            unsafe {
+                let mut new = Self([0; N]);
+                let new_ptr = new.0.as_mut_ptr() as *mut $ty;
+                let self_ptr = self.0.as_ptr() as *const $ty;
+                let rhs_ptr = rhs.0.as_ptr() as *const $ty;
+
+                let loops = $size / (size_of::<$ty>() * 2);
+                let offset = if $offset { loops } else { 0 };
+                for i in 0..loops {
+                    *new_ptr.add(i * 2) = *self_ptr.add(i + offset);
+                    *new_ptr.add(i * 2 + 1) = *rhs_ptr.add(i + offset);
+                }
+
+                new
+            }
+        }
+    };
+}
+
+macro_rules! map_interleave_even {
+    ($func:ident, $ty:ty, $size:expr) => {
+        #[inline(always)]
+        unsafe fn $func(self, rhs: Self) -> Self {
+            unsafe {
+                let mut new = Self([0; N]);
+                let new_ptr = new.0.as_mut_ptr() as *mut $ty;
+                let self_ptr = self.0.as_ptr() as *const $ty;
+                let rhs_ptr = rhs.0.as_ptr() as *const $ty;
+
+                let loops = $size / (size_of::<$ty>() * 2);
+                for i in 0..loops {
+                    *new_ptr.add(i * 2) = *self_ptr.add(i * 2);
+                    *new_ptr.add(i * 2 + 1) = *rhs_ptr.add(i * 2);
+                }
+
+                new
+            }
+        }
+    };
+}
+
+macro_rules! map_interleave_odd {
+    ($func:ident, $ty:ty, $size:expr) => {
+        #[inline(always)]
+        unsafe fn $func(self, rhs: Self) -> Self {
+            unsafe {
+                let mut new = Self([0; N]);
+                let new_ptr = new.0.as_mut_ptr() as *mut $ty;
+                let self_ptr = self.0.as_ptr() as *const $ty;
+                let rhs_ptr = rhs.0.as_ptr() as *const $ty;
+
+                let loops = $size / (size_of::<$ty>() * 2);
+                for i in 0..loops {
+                    *new_ptr.add(i * 2) = *self_ptr.add(i * 2 + 1);
+                    *new_ptr.add(i * 2 + 1) = *rhs_ptr.add(i * 2 + 1);
+                }
+
+                new
+            }
+        }
+    };
+}
+
+macro_rules! map_deinterleave_even {
+    ($func:ident, $ty:ty, $size:expr) => {
+        #[inline(always)]
+        unsafe fn $func(self, rhs: Self) -> Self {
+            unsafe {
+                let mut new = Self([0; N]);
+                let new_ptr = new.0.as_mut_ptr() as *mut $ty;
+                let self_ptr = self.0.as_ptr() as *const $ty;
+                let rhs_ptr = rhs.0.as_ptr() as *const $ty;
+
+                let loops = $size / (size_of::<$ty>() * 2);
+                for i in 0..loops {
+                    *new_ptr.add(i) = *self_ptr.add(i * 2);
+                }
+                for i in 0..loops {
+                    *new_ptr.add(i + loops) = *rhs_ptr.add(i * 2);
+                }
+
+                new
+            }
+        }
+    };
+}
+
+macro_rules! map_deinterleave_odd {
+    ($func:ident, $ty:ty, $size:expr) => {
+        #[inline(always)]
+        unsafe fn $func(self, rhs: Self) -> Self {
+            unsafe {
+                let mut new = Self([0; N]);
+                let new_ptr = new.0.as_mut_ptr() as *mut $ty;
+                let self_ptr = self.0.as_ptr() as *const $ty;
+                let rhs_ptr = rhs.0.as_ptr() as *const $ty;
+
+                let loops = $size / (size_of::<$ty>() * 2);
+                for i in 0..loops {
+                    *new_ptr.add(i) = *self_ptr.add(i * 2 + 1);
+                }
+                for i in 0..loops {
+                    *new_ptr.add(i + loops) = *rhs_ptr.add(i * 2 + 1);
+                }
+
+                new
+            }
+        }
+    };
+}
+
+impl<const N: usize> SimdInterleave for ScalarReg<N> {
+    #[inline(always)]
+    unsafe fn interleave_lower_128(self, rhs: Self) -> Self {
+        if N == 16 {
+            return self;
+        }
+
+        unsafe {
+            let mut new = Self([0; N]);
+            let new_ptr = new.0.as_mut_ptr() as *mut u64;
+            let self_ptr = self.0.as_ptr() as *const u64;
+            let rhs_ptr = rhs.0.as_ptr() as *const u64;
+
+            for i in 0..N / 32 {
+                *new_ptr.add(i * 4) = *self_ptr.add(i * 2);
+                *new_ptr.add(i * 4 + 1) = *self_ptr.add(i * 2 + 1);
+                *new_ptr.add(i * 4 + 2) = *rhs_ptr.add(i * 2);
+                *new_ptr.add(i * 4 + 3) = *rhs_ptr.add(i * 2 + 1);
+            }
+
+            new
+        }
+    }
+
+    map_interleave_hilo!(interleave_lower_64, u64, N, false);
+    map_interleave_hilo!(interleave_lower_32, u32, N, false);
+    map_interleave_hilo!(interleave_lower_16, u16, N, false);
+    map_interleave_hilo!(interleave_lower_8, u8, N, false);
+
+    unsafe fn interleave_upper_128(self, rhs: Self) -> Self {
+        if N == 16 {
+            return self;
+        }
+
+        unsafe {
+            let mut new = Self([0; N]);
+            let new_ptr = new.0.as_mut_ptr() as *mut u64;
+            let self_ptr = self.0.as_ptr() as *const u64;
+            let rhs_ptr = rhs.0.as_ptr() as *const u64;
+
+            for i in 0..N / 32 {
+                let offset = i * 2 + N / 16;
+                *new_ptr.add(i * 4) = *self_ptr.add(offset);
+                *new_ptr.add(i * 4 + 1) = *self_ptr.add(offset + 1);
+                *new_ptr.add(i * 4 + 2) = *rhs_ptr.add(offset);
+                *new_ptr.add(i * 4 + 3) = *rhs_ptr.add(offset + 1);
+            }
+
+            new
+        }
+    }
+    map_interleave_hilo!(interleave_upper_64, u64, N, true);
+    map_interleave_hilo!(interleave_upper_32, u32, N, true);
+    map_interleave_hilo!(interleave_upper_16, u16, N, true);
+    map_interleave_hilo!(interleave_upper_8, u8, N, true);
+
+    unsafe fn interleave_even_128(self, rhs: Self) -> Self {
+        if N == 16 {
+            return self;
+        }
+
+        unsafe {
+            let mut new = Self([0; N]);
+            let new_ptr = new.0.as_mut_ptr() as *mut u64;
+            let self_ptr = self.0.as_ptr() as *const u64;
+            let rhs_ptr = rhs.0.as_ptr() as *const u64;
+
+            for i in 0..N / 32 {
+                *new_ptr.add(i * 4) = *self_ptr.add(i * 4);
+                *new_ptr.add(i * 4 + 1) = *self_ptr.add(i * 4 + 1);
+                *new_ptr.add(i * 4 + 2) = *rhs_ptr.add(i * 4);
+                *new_ptr.add(i * 4 + 3) = *rhs_ptr.add(i * 4 + 1);
+            }
+
+            new
+        }
+    }
+
+    map_interleave_even!(interleave_even_64, u64, N);
+    map_interleave_even!(interleave_even_32, u32, N);
+    map_interleave_even!(interleave_even_16, u16, N);
+    map_interleave_even!(interleave_even_8, u8, N);
+
+    unsafe fn interleave_odd_128(self, rhs: Self) -> Self {
+        if N == 16 {
+            return self;
+        }
+
+        unsafe {
+            let mut new = Self([0; N]);
+            let new_ptr = new.0.as_mut_ptr() as *mut u64;
+            let self_ptr = self.0.as_ptr() as *const u64;
+            let rhs_ptr = rhs.0.as_ptr() as *const u64;
+
+            for i in 0..N / 32 {
+                *new_ptr.add(i * 4) = *self_ptr.add(i * 4 + 2);
+                *new_ptr.add(i * 4 + 1) = *self_ptr.add(i * 4 + 3);
+                *new_ptr.add(i * 4 + 2) = *rhs_ptr.add(i * 4 + 2);
+                *new_ptr.add(i * 4 + 3) = *rhs_ptr.add(i * 4 + 3);
+            }
+
+            new
+        }
+    }
+    map_interleave_odd!(interleave_odd_64, u64, N);
+    map_interleave_odd!(interleave_odd_32, u32, N);
+    map_interleave_odd!(interleave_odd_16, u16, N);
+    map_interleave_odd!(interleave_odd_8, u8, N);
+
+    unsafe fn deinterleave_even_128(self, rhs: Self) -> Self {
+        if N == 16 {
+            return self;
+        }
+
+        unsafe {
+            let mut new = Self([0; N]);
+            let new_ptr = new.0.as_mut_ptr() as *mut u64;
+            let self_ptr = self.0.as_ptr() as *const u64;
+            let rhs_ptr = rhs.0.as_ptr() as *const u64;
+
+            for i in 0..N / 32 {
+                *new_ptr.add(i * 2) = *self_ptr.add(i * 4);
+                *new_ptr.add(i * 2 + 1) = *self_ptr.add(i * 4 + 1);
+            }
+            for i in 0..N / 32 {
+                let offset = i + N / 32;
+                *new_ptr.add(offset * 2) = *rhs_ptr.add(i * 4);
+                *new_ptr.add(offset * 2 + 1) = *rhs_ptr.add(i * 4 + 1);
+            }
+
+            new
+        }
+    }
+
+    map_deinterleave_even!(deinterleave_even_64, u64, N);
+    map_deinterleave_even!(deinterleave_even_32, u32, N);
+    map_deinterleave_even!(deinterleave_even_16, u16, N);
+    map_deinterleave_even!(deinterleave_even_8, u8, N);
+
+    unsafe fn deinterleave_odd_128(self, rhs: Self) -> Self {
+        if N == 16 {
+            return self;
+        }
+
+        unsafe {
+            let mut new = Self([0; N]);
+            let new_ptr = new.0.as_mut_ptr() as *mut u64;
+            let self_ptr = self.0.as_ptr() as *const u64;
+            let rhs_ptr = rhs.0.as_ptr() as *const u64;
+
+            for i in 0..N / 32 {
+                *new_ptr.add(i * 2) = *self_ptr.add(i * 4 + 2);
+                *new_ptr.add(i * 2 + 1) = *self_ptr.add(i * 4 + 3);
+            }
+            for i in 0..N / 32 {
+                let offset = i + N / 32;
+                *new_ptr.add(offset * 2) = *rhs_ptr.add(i * 4 + 2);
+                *new_ptr.add(offset * 2 + 1) = *rhs_ptr.add(i * 4 + 3);
+            }
+
+            new
+        }
+    }
+    map_deinterleave_odd!(deinterleave_odd_64, u64, N);
+    map_deinterleave_odd!(deinterleave_odd_32, u32, N);
+    map_deinterleave_odd!(deinterleave_odd_16, u16, N);
+    map_deinterleave_odd!(deinterleave_odd_8, u8, N);
+}
+
+impl<const N: usize> SimdMulAdd for ScalarReg<N> {
     #[inline(always)]
     unsafe fn mul_add_f64(self, mult: Self, add: Self) -> Self {
         scalar_fma_expr_op!(f64, self, mult, add, N, |a, b, c| f64::mul_add(a, b, c))
@@ -584,7 +1093,7 @@ impl<const N: usize> SimdMulAddImpl for ScalarReg<N> {
     }
 }
 
-impl<const N: usize> SimdRoundImpl for ScalarReg<N> {
+impl<const N: usize> SimdRound for ScalarReg<N> {
     #[inline(always)]
     unsafe fn round_f64(self) -> Self {
         scalar_self_op!(f64, round_ties_even, self, N)
@@ -611,157 +1120,76 @@ impl<const N: usize> SimdRoundImpl for ScalarReg<N> {
     }
 }
 
-impl<const N: usize> SimdPartialOrdImpl for ScalarReg<N> {
-    type MaskType = ScalarMask<N>;
-    #[inline(always)]
-    unsafe fn cmp_f64_eq(self, rhs: Self) -> Self::MaskType {
-        scalar_cmp!(f64, ==, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn cmp_f64_lt(self, rhs: Self) -> Self::MaskType {
-        scalar_cmp!(f64, <, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn cmp_f64_le(self, rhs: Self) -> Self::MaskType {
-        scalar_cmp!(f64, <=, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn cmp_f64_gt(self, rhs: Self) -> Self::MaskType {
-        scalar_cmp!(f64, >, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn cmp_f64_ge(self, rhs: Self) -> Self::MaskType {
-        scalar_cmp!(f64, >=, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn cmp_f64_neq(self, rhs: Self) -> Self::MaskType {
-        scalar_cmp!(f64, !=, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn cmp_f32_eq(self, rhs: Self) -> Self::MaskType {
-        scalar_cmp!(f32, ==, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn cmp_f32_lt(self, rhs: Self) -> Self::MaskType {
-        scalar_cmp!(f32, <, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn cmp_f32_le(self, rhs: Self) -> Self::MaskType {
-        scalar_cmp!(f32, <=, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn cmp_f32_gt(self, rhs: Self) -> Self::MaskType {
-        scalar_cmp!(f32, >, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn cmp_f32_ge(self, rhs: Self) -> Self::MaskType {
-        scalar_cmp!(f32, >=, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn cmp_f32_neq(self, rhs: Self) -> Self::MaskType {
-        scalar_cmp!(f32, !=, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn cmp_i64_eq(self, rhs: Self) -> Self::MaskType {
-        scalar_cmp!(i64, ==, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn cmp_i64_gt(self, rhs: Self) -> Self::MaskType {
-        scalar_cmp!(i64, >, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn cmp_i32_eq(self, rhs: Self) -> Self::MaskType {
-        scalar_cmp!(i32, ==, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn cmp_i32_gt(self, rhs: Self) -> Self::MaskType {
-        scalar_cmp!(i32, >, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn cmp_i16_eq(self, rhs: Self) -> Self::MaskType {
-        scalar_cmp!(i16, ==, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn cmp_i16_gt(self, rhs: Self) -> Self::MaskType {
-        scalar_cmp!(i16, >, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn cmp_i8_eq(self, rhs: Self) -> Self::MaskType {
-        scalar_cmp!(i8, ==, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn cmp_i8_gt(self, rhs: Self) -> Self::MaskType {
-        scalar_cmp!(i8, >, self, rhs, N)
-    }
+macro_rules! map_scalar_cmp {
+    {$func:ident, $type:ty, $op:tt, $size:expr} => {
+        #[inline(always)]
+        unsafe fn $func(self, rhs: Self) -> Self::MaskType {
+            unsafe {
+                let mut result = ScalarMask::<$size>([false; $size]);
 
-    #[inline(always)]
-    unsafe fn max_f64(self, rhs: Self) -> Self {
-        scalar_func_op!(f64, max, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn min_f64(self, rhs: Self) -> Self {
-        scalar_func_op!(f64, min, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn max_f32(self, rhs: Self) -> Self {
-        scalar_func_op!(f32, max, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn min_f32(self, rhs: Self) -> Self {
-        scalar_func_op!(f32, min, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn max_i32(self, rhs: Self) -> Self {
-        scalar_func_op!(i32, max, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn min_i32(self, rhs: Self) -> Self {
-        scalar_func_op!(i32, min, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn max_i16(self, rhs: Self) -> Self {
-        scalar_func_op!(i16, max, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn min_i16(self, rhs: Self) -> Self {
-        scalar_func_op!(i16, min, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn max_i8(self, rhs: Self) -> Self {
-        scalar_func_op!(i8, max, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn min_i8(self, rhs: Self) -> Self {
-        scalar_func_op!(i8, min, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn max_u32(self, rhs: Self) -> Self {
-        scalar_func_op!(u32, max, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn min_u32(self, rhs: Self) -> Self {
-        scalar_func_op!(u32, min, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn max_u16(self, rhs: Self) -> Self {
-        scalar_func_op!(u16, max, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn min_u16(self, rhs: Self) -> Self {
-        scalar_func_op!(u16, min, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn max_u8(self, rhs: Self) -> Self {
-        scalar_func_op!(u8, max, self, rhs, N)
-    }
-    #[inline(always)]
-    unsafe fn min_u8(self, rhs: Self) -> Self {
-        scalar_func_op!(u8, min, self, rhs, N)
+                let self_ptr = self.0.as_ptr() as *const $type;
+                let rhs_ptr = rhs.0.as_ptr() as *const $type;
+
+                for i in 0..($size / size_of::<$type>()) {
+                    result.0[i] = *self_ptr.add(i) $op *rhs_ptr.add(i);
+                }
+
+                result
+            }
+        }
     }
 }
 
+impl<const N: usize> SimdPartialOrd for ScalarReg<N> {
+    type MaskType = ScalarMask<N>;
+    map_scalar_cmp!(cmp_f64_eq, f64, ==, N);
+    map_scalar_cmp!(cmp_f64_lt, f64, <, N);
+    map_scalar_cmp!(cmp_f64_le, f64, <=, N);
+    map_scalar_cmp!(cmp_f64_gt, f64, >, N);
+    map_scalar_cmp!(cmp_f64_ge, f64, >=, N);
+    map_scalar_cmp!(cmp_f64_ne, f64, !=, N);
+    map_scalar_cmp!(cmp_f32_eq, f32, ==, N);
+    map_scalar_cmp!(cmp_f32_lt, f32, <, N);
+    map_scalar_cmp!(cmp_f32_le, f32, <=, N);
+    map_scalar_cmp!(cmp_f32_gt, f32, >, N);
+    map_scalar_cmp!(cmp_f32_ge, f32, >=, N);
+    map_scalar_cmp!(cmp_f32_ne, f32, !=, N);
+    map_scalar_cmp!(cmp_i64_eq, i64, ==, N);
+    map_scalar_cmp!(cmp_i64_gt, i64, >, N);
+    map_scalar_cmp!(cmp_i32_eq, i32, ==, N);
+    map_scalar_cmp!(cmp_i32_gt, i32, >, N);
+    map_scalar_cmp!(cmp_i16_eq, i16, ==, N);
+    map_scalar_cmp!(cmp_i16_gt, i16, >, N);
+    map_scalar_cmp!(cmp_i8_eq, i8, ==, N);
+    map_scalar_cmp!(cmp_i8_gt, i8, >, N);
+    map_scalar_cmp!(cmp_u64_gt, u64, >, N);
+    map_scalar_cmp!(cmp_u32_gt, u32, >, N);
+    map_scalar_cmp!(cmp_u16_gt, u16, >, N);
+    map_scalar_cmp!(cmp_u8_gt, u8, >, N);
+    map_scalar_op!(max_f64, f64, max, N);
+    map_scalar_op!(min_f64, f64, min, N);
+    map_scalar_op!(max_f32, f32, max, N);
+    map_scalar_op!(min_f32, f32, min, N);
+    map_scalar_op!(max_i64, i64, max, N);
+    map_scalar_op!(min_i64, i64, min, N);
+    map_scalar_op!(max_i32, i32, max, N);
+    map_scalar_op!(min_i32, i32, min, N);
+    map_scalar_op!(max_i16, i16, max, N);
+    map_scalar_op!(min_i16, i16, min, N);
+    map_scalar_op!(max_i8, i8, max, N);
+    map_scalar_op!(min_i8, i8, min, N);
+    map_scalar_op!(max_u64, u64, max, N);
+    map_scalar_op!(min_u64, u64, min, N);
+    map_scalar_op!(max_u32, u32, max, N);
+    map_scalar_op!(min_u32, u32, min, N);
+    map_scalar_op!(max_u16, u16, max, N);
+    map_scalar_op!(min_u16, u16, min, N);
+    map_scalar_op!(max_u8, u8, max, N);
+    map_scalar_op!(min_u8, u8, min, N);
+}
+
 // TODO: Make a custom trait for handling this transmutation into i*.
-impl<const N: usize> SimdSplatImpl for ScalarReg<N> {
+impl<const N: usize> SimdSplat for ScalarReg<N> {
     #[inline(always)]
     unsafe fn splat_64<T>(val: T) -> Self {
         scalar_splat!(u64, self, transmute_copy(&val), N)
@@ -780,7 +1208,7 @@ impl<const N: usize> SimdSplatImpl for ScalarReg<N> {
     }
 }
 
-impl<const N: usize> SimdGatherImpl for ScalarReg<N> {
+impl<const N: usize> SimdGather for ScalarReg<N> {
     #[inline(always)]
     unsafe fn gather_32_from_32<T, const B: i32>(self, ptr: *const T) -> Self {
         unsafe {
@@ -811,7 +1239,7 @@ impl<const N: usize> SimdGatherImpl for ScalarReg<N> {
     }
 }
 
-impl<const N: usize> SimdSqrtImpl for ScalarReg<N> {
+impl<const N: usize> SimdSqrt for ScalarReg<N> {
     #[inline(always)]
     unsafe fn sqrt_f64(self) -> Self {
         scalar_self_op!(f64, sqrt, self, N)
@@ -826,14 +1254,14 @@ impl<const N: usize> SimdSqrtImpl for ScalarReg<N> {
     }
 }
 
-impl<const N: usize> SimdAllBitsImpl for ScalarMask<N> {
+impl<const N: usize> SimdAllBits for ScalarMask<N> {
     #[inline(always)]
     unsafe fn all_zero(self) -> bool {
         !self.0.iter().any(|&x| x)
     }
 }
 
-impl<const N: usize> SimdBitwiseImpl for ScalarMask<N> {
+impl<const N: usize> SimdBitwise for ScalarMask<N> {
     #[inline(always)]
     unsafe fn and(self, rhs: Self) -> Self {
         Self(std::array::from_fn(|i| self.0[i] & rhs.0[i]))
@@ -856,7 +1284,7 @@ impl<const N: usize> SimdBitwiseImpl for ScalarMask<N> {
     }
 }
 
-impl<const N: usize> SimdNegateImpl for ScalarReg<N> {
+impl<const N: usize> SimdNegate for ScalarReg<N> {
     #[inline(always)]
     unsafe fn negate_f64(self) -> Self {
         unsafe { Self::splat_64(-0.0f64).xor(self) }
@@ -867,7 +1295,7 @@ impl<const N: usize> SimdNegateImpl for ScalarReg<N> {
     }
 }
 
-impl<const N: usize> SimdBlockShiftImpl for ScalarReg<N> {
+impl<const N: usize> SimdBlockShift for ScalarReg<N> {
     #[inline(always)]
     unsafe fn block_left_byte_shift<const M: i32>(self) -> Self {
         let mut new = unsafe { Self::splat_8(0) };
@@ -948,7 +1376,7 @@ impl<const N: usize> SimdMaskBitConversion for ScalarMask<N> {
     }
 }
 
-impl<const M: usize> SimdLaneShiftImpl for ScalarReg<M> {
+impl<const M: usize> SimdLaneShift for ScalarReg<M> {
     #[inline(always)]
     unsafe fn left_lane_shift_32(self, n: u32) -> Self {
         let mut new = unsafe { Self::zero() };

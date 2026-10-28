@@ -10,7 +10,7 @@ pub struct NeonReg(pub float32x4_t);
 impl SimdArch for NeonReg {}
 impl MaskArch for NeonReg {}
 
-impl SimdAddImpl for NeonReg {
+impl SimdAdd for NeonReg {
     #[inline(always)]
     unsafe fn f64_add(self, rhs: Self) -> Self {
         self_from_op!(vaddq_f64, self, rhs)
@@ -37,7 +37,7 @@ impl SimdAddImpl for NeonReg {
     }
 }
 
-impl SimdSubImpl for NeonReg {
+impl SimdSub for NeonReg {
     #[inline(always)]
     unsafe fn f64_sub(self, rhs: Self) -> Self {
         self_from_op!(vsubq_f64, self, rhs)
@@ -64,7 +64,7 @@ impl SimdSubImpl for NeonReg {
     }
 }
 
-impl SimdMulImpl for NeonReg {
+impl SimdMul for NeonReg {
     #[inline(always)]
     unsafe fn f64_mul(self, rhs: Self) -> Self {
         self_from_op!(vmulq_f64, self, rhs)
@@ -83,7 +83,7 @@ impl SimdMulImpl for NeonReg {
     }
 }
 
-impl SimdDivImpl for NeonReg {
+impl SimdDiv for NeonReg {
     #[inline(always)]
     unsafe fn f64_div(self, rhs: Self) -> Self {
         self_from_op!(vdivq_f64, self, rhs)
@@ -94,7 +94,7 @@ impl SimdDivImpl for NeonReg {
     }
 }
 
-impl SimdBitwiseImpl for NeonReg {
+impl SimdBitwise for NeonReg {
     #[inline(always)]
     unsafe fn and(self, rhs: Self) -> Self {
         self_from_op!(vandq_u32, self, rhs)
@@ -109,7 +109,7 @@ impl SimdBitwiseImpl for NeonReg {
     }
     #[inline(always)]
     unsafe fn not(self) -> Self {
-        Self(self.xor(Self::splat_32(!0u32)).0)
+        unsafe { Self(self.xor(Self::splat_32(!0u32)).0) }
     }
     #[inline(always)]
     unsafe fn and_not(self, rhs: Self) -> Self {
@@ -117,7 +117,52 @@ impl SimdBitwiseImpl for NeonReg {
     }
 }
 
-impl SimdShiftImpl for NeonReg {
+impl SimdShift for NeonReg {
+    #[inline(always)]
+    unsafe fn sll_64(self, rhs: u32) -> Self {
+        unsafe { self.sllv_64(Self::splat_64(rhs)) }
+    }
+    #[inline(always)]
+    unsafe fn srl_64(self, rhs: u32) -> Self {
+        unsafe { self.srlv_64(Self::splat_64(rhs)) }
+    }
+    #[inline(always)]
+    unsafe fn sra_64(self, rhs: u32) -> Self {
+        unsafe { self.srav_64(Self::splat_64(rhs)) }
+    }
+    #[inline(always)]
+    unsafe fn sll_32(self, rhs: u32) -> Self {
+        unsafe { self.sllv_32(Self::splat_32(rhs)) }
+    }
+    #[inline(always)]
+    unsafe fn srl_32(self, rhs: u32) -> Self {
+        unsafe { self.srlv_32(Self::splat_32(rhs)) }
+    }
+    #[inline(always)]
+    unsafe fn sra_32(self, rhs: u32) -> Self {
+        unsafe { self.srav_32(Self::splat_32(rhs)) }
+    }
+    #[inline(always)]
+    unsafe fn sll_16(self, rhs: u32) -> Self {
+        unsafe { self.sllv_16(Self::splat_16(rhs)) }
+    }
+    #[inline(always)]
+    unsafe fn srl_16(self, rhs: u32) -> Self {
+        unsafe { self.srlv_16(Self::splat_16(rhs)) }
+    }
+    #[inline(always)]
+    unsafe fn sra_16(self, rhs: u32) -> Self {
+        unsafe { self.srav_16(Self::splat_16(rhs)) }
+    }
+    map_intrinsic!(slli_64, vshlq_n_u64, const N: i32, self);
+    map_intrinsic!(srli_64, vshrq_n_u64, const N: i32, self);
+    map_intrinsic!(srai_64, vshrq_n_s64, const N: i32, self);
+    map_intrinsic!(slli_32, vshlq_n_u32, const N: i32, self);
+    map_intrinsic!(srli_32, vshrq_n_u32, const N: i32, self);
+    map_intrinsic!(srai_32, vshrq_n_s32, const N: i32, self);
+    map_intrinsic!(slli_16, vshlq_n_u16, const N: i32, self);
+    map_intrinsic!(srli_16, vshrq_n_u16, const N: i32, self);
+    map_intrinsic!(srai_16, vshrq_n_s16, const N: i32, self);
     #[inline(always)]
     unsafe fn sllv_64(self, rhs: Self) -> Self {
         self_from_op!(vshlq_s64, self, rhs)
@@ -156,7 +201,7 @@ impl SimdShiftImpl for NeonReg {
     }
 }
 
-impl SimdLoadImpl for NeonReg {
+impl SimdLoad for NeonReg {
     type MaskType = Self;
     #[inline(always)]
     unsafe fn load_aligned<T>(ptr: *const T) -> Self {
@@ -186,7 +231,7 @@ impl SimdLoadImpl for NeonReg {
     }
 }
 
-impl SimdStoreImpl for NeonReg {
+impl SimdStore for NeonReg {
     type MaskType = Self;
     #[inline(always)]
     unsafe fn store_aligned<T>(self, ptr: *mut T) {
@@ -215,14 +260,14 @@ impl SimdStoreImpl for NeonReg {
     }
 }
 
-impl SimdZeroImpl for NeonReg {
+impl SimdZero for NeonReg {
     #[inline(always)]
     unsafe fn zero() -> Self {
         unsafe { Self(transmute(vdupq_n_u32(0))) }
     }
 }
 
-impl SimdFloatCastsImpl for NeonReg {
+impl SimdFloatCasts for NeonReg {
     #[inline(always)]
     unsafe fn float_to_int_trunc(self) -> Self {
         self_from_op!(vcvtq_s32_f32, self)
@@ -233,28 +278,217 @@ impl SimdFloatCastsImpl for NeonReg {
     }
 }
 
-impl SimdIntCastsImpl for NeonReg {
+impl SimdIntCasts for NeonReg {
     #[inline(always)]
     unsafe fn int_to_float(self) -> Self {
         self_from_op!(vcvtq_f32_s32, self)
     }
 }
 
-impl SimdPermuteImpl for NeonReg {
+impl SimdPermute for NeonReg {
     #[inline(always)]
-    unsafe fn permute_32(self, rhs: Self) -> Self {
-        let mult = Self::splat_32(0x04040404);
-        let add = Self::splat_32(0x03020100);
-        let byte_indices = rhs.i32_mul(mult).i32_add(add);
-        self_from_op!(vqtbl1q_u8, self, byte_indices)
+    unsafe fn vpermute_64(self, rhs: Self) -> Self {
+        unsafe {
+            let lo = self_from_const_op!(vdupq_laneq_u64, 0, self);
+            let hi = self_from_const_op!(vdupq_laneq_u64, 1, self);
+            let mask = self_from_op!(vtstq_u64, rhs, Self::splat_64(1));
+            mask.vblend_64(lo, hi)
+        }
     }
     #[inline(always)]
-    unsafe fn permute_8(self, rhs: Self) -> Self {
+    unsafe fn vpermute_32(self, rhs: Self) -> Self {
+        unsafe {
+            let mult = Self::splat_32(0x04040404);
+            let add = Self::splat_32(0x03020100);
+            let byte_indices = self_from_op!(vmlaq_u32, add, rhs, mult);
+            self_from_op!(vqtbl1q_u8, self, byte_indices)
+        }
+    }
+    #[inline(always)]
+    unsafe fn vshuffle_16(self, rhs: Self) -> Self {
+        unsafe {
+            let mult = Self::splat_16(0x0202);
+            let add = Self::splat_32(0x0100);
+            let byte_indices = self_from_op!(vmlaq_u16, add, rhs, mult);
+            self_from_op!(vqtbl1q_u8, self, byte_indices)
+        }
+    }
+    #[inline(always)]
+    unsafe fn vshuffle_8(self, rhs: Self) -> Self {
         self_from_op!(vqtbl1q_u8, self, rhs)
+    }
+
+    #[inline(always)]
+    unsafe fn permute_128<const N: i32>(self) -> Self {
+        self
+    }
+
+    #[inline(always)]
+    unsafe fn shuffle_64<const N: i32>(self) -> Self {
+        match N & 0b11 {
+            0b00 => self_from_const_op!(vdupq_laneq_u64, 0, self),
+            0b01 => self_from_const_op!(vextq_u64, 1, self, self),
+            0b10 => self,
+            0b11 => self_from_const_op!(vdupq_laneq_u64, 1, self),
+            _ => unreachable!(),
+        }
+    }
+    #[inline(always)]
+    unsafe fn shuffle_32<const N: i32>(self) -> Self {
+        const fn gen_indices(n: u32) -> [u8; 16] {
+            let mut indices = [0; 16];
+
+            let mut i = 0;
+            while i < 4 {
+                let sel = ((n >> (i * 2)) & 3) as u8;
+                indices[i * 4] = sel * 4;
+                indices[i * 4 + 1] = sel * 4 + 1;
+                indices[i * 4 + 2] = sel * 4 + 2;
+                indices[i * 4 + 3] = sel * 4 + 3;
+                i += 1;
+            }
+
+            indices
+        }
+
+        match N & 0xFF {
+            0b11_10_01_00 => self,
+            0b00_11_10_01 => self_from_const_op!(vextq_u32, 1, self, self),
+            0b01_00_11_10 => self_from_const_op!(vextq_u32, 2, self, self),
+            0b10_01_00_11 => self_from_const_op!(vextq_u32, 3, self, self),
+            0b00_00_00_00 => self_from_const_op!(vdupq_laneq_u32, 0, self),
+            0b01_01_01_01 => self_from_const_op!(vdupq_laneq_u32, 1, self),
+            0b10_10_10_10 => self_from_const_op!(vdupq_laneq_u32, 2, self),
+            0b11_11_11_11 => self_from_const_op!(vdupq_laneq_u32, 3, self),
+            0b01_00_01_00 => self_from_const_op!(vdupq_laneq_u64, 0, self),
+            0b11_10_11_10 => self_from_const_op!(vdupq_laneq_u64, 1, self),
+            0b10_10_00_00 => self_from_op!(vtrn1q_u32, self, self),
+            0b11_11_01_01 => self_from_op!(vtrn2q_u32, self, self),
+            0b01_01_00_00 => self_from_op!(vzip1q_u32, self, self),
+            0b11_11_10_10 => self_from_op!(vzip2q_u32, self, self),
+            0b10_00_10_00 => self_from_op!(vuzp1q_u32, self, self),
+            0b11_01_11_01 => self_from_op!(vuzp2q_u32, self, self),
+            0b10_11_00_01 => self_from_op!(vrev64q_u32, self),
+            0b11_10_00_00 => self_from_const2_op!(vcopyq_laneq_u32, 1, 0, self, self),
+            0b11_00_01_00 => self_from_const2_op!(vcopyq_laneq_u32, 2, 0, self, self),
+            0b00_10_01_00 => self_from_const2_op!(vcopyq_laneq_u32, 3, 0, self, self),
+            0b11_10_01_01 => self_from_const2_op!(vcopyq_laneq_u32, 0, 1, self, self),
+            0b11_01_01_00 => self_from_const2_op!(vcopyq_laneq_u32, 2, 1, self, self),
+            0b01_10_01_00 => self_from_const2_op!(vcopyq_laneq_u32, 3, 1, self, self),
+            0b11_10_01_10 => self_from_const2_op!(vcopyq_laneq_u32, 0, 2, self, self),
+            0b11_10_10_00 => self_from_const2_op!(vcopyq_laneq_u32, 1, 2, self, self),
+            0b10_10_01_00 => self_from_const2_op!(vcopyq_laneq_u32, 3, 2, self, self),
+            0b11_10_01_11 => self_from_const2_op!(vcopyq_laneq_u32, 0, 3, self, self),
+            0b11_10_11_00 => self_from_const2_op!(vcopyq_laneq_u32, 1, 3, self, self),
+            0b11_11_01_00 => self_from_const2_op!(vcopyq_laneq_u32, 2, 3, self, self),
+            _ => {
+                let indices = const { gen_indices(N as u32 & 0xFF) };
+                unsafe {
+                    let indices = Self::load_unaligned(indices.as_ptr());
+                    self.vshuffle_8(indices)
+                }
+            }
+        }
+    }
+
+    #[inline(always)]
+    unsafe fn shuffle_16<const N: i32>(self) -> Self {
+        const fn gen_indices(n: u32) -> [u8; 16] {
+            let mut indices = [0; 16];
+
+            let mut cur = 0;
+            while cur < 2 {
+                let mut i = 0;
+                while i < 4 {
+                    let sel = ((n >> (i * 2)) & 3) as usize;
+                    let src = (sel * 2 + cur * 8) as u8;
+                    let dst = i * 2 + cur * 8;
+                    indices[dst] = src;
+                    indices[dst + 1] = src + 1;
+                    i += 1;
+                }
+                cur += 1;
+            }
+
+            indices
+        }
+
+        match N & 0xFF {
+            0b11_10_01_00 => self,
+            0b10_11_00_01 => self_from_op!(vrev32q_u16, self),
+            0b00_01_10_11 => self_from_op!(vrev64q_u16, self),
+            0b01_00_11_10 => self_from_op!(vrev64q_u32, self),
+            0b10_10_00_00 => self_from_op!(vtrn1q_u16, self, self),
+            0b11_11_01_01 => self_from_op!(vtrn2q_u16, self, self),
+            0b01_00_01_00 => self_from_op!(vtrn1q_u32, self, self),
+            0b11_10_11_10 => self_from_op!(vtrn2q_u32, self, self),
+            _ => {
+                let indices = const { gen_indices(N as u32 & 0xFF) };
+                unsafe {
+                    let indices = Self::load_unaligned(indices.as_ptr());
+                    self.vshuffle_8(indices)
+                }
+            }
+        }
+    }
+
+    #[inline(always)]
+    unsafe fn permute2_half<const N: i32>(self, rhs: Self) -> Self {
+        unsafe { self.shuffle2_64::<N>(rhs) }
+    }
+
+    #[inline(always)]
+    unsafe fn shuffle2_128<const N: i32>(self, _rhs: Self) -> Self {
+        self
+    }
+    #[inline(always)]
+    unsafe fn shuffle2_64<const N: i32>(self, rhs: Self) -> Self {
+        match N & 0b11 {
+            0b00 => self_from_op!(vzip1q_u64, self, rhs),
+            0b01 => self_from_const_op!(vextq_u64, 1, self, rhs),
+            0b10 => self_from_const2_op!(vcopyq_laneq_u64, 1, 1, self, rhs),
+            0b11 => self_from_op!(vzip2q_u64, self, rhs),
+            _ => unreachable!(),
+        }
+    }
+    #[inline(always)]
+    unsafe fn shuffle2_32<const N: i32>(self, rhs: Self) -> Self {
+        const fn gen_indices(n: u32) -> [u8; 16] {
+            let mut indices = [0; 16];
+            let mut i = 0;
+            while i < 4 {
+                let reg = (i & 2) >> 1;
+                let sel = ((n >> (i * 2)) & 3) as usize;
+                let src = sel * 4 + reg * 16;
+                let mut j = 0;
+                while j < 4 {
+                    indices[i * 4 + j] = (src + j) as u8;
+                    j += 1;
+                }
+                i += 1;
+            }
+            indices
+        }
+
+        match N & 0xFF {
+            0b11_10_01_00 => self_from_const2_op!(vcopyq_laneq_u64, 1, 1, self, rhs),
+            0b01_00_11_10 => self_from_const_op!(vextq_u32, 2, self, rhs),
+            0b01_00_01_00 => self_from_op!(vtrn1q_u64, self, rhs),
+            0b11_10_11_10 => self_from_op!(vtrn2q_u64, self, rhs),
+            0b10_00_10_00 => self_from_op!(vuzp1q_u32, self, rhs),
+            0b11_01_11_01 => self_from_op!(vuzp2q_u32, self, rhs),
+            _ => {
+                let indices = const { gen_indices(N as u32 & 0xFF) };
+                unsafe {
+                    let indices = Self::load_unaligned(indices.as_ptr());
+                    self_from_op!(vqtbl2q_u8, (self, rhs), indices)
+                }
+            }
+        }
     }
 }
 
-impl SimdVariableBlendImpl for NeonReg {
+impl SimdVariableBlend for NeonReg {
     type VecType = Self;
     #[inline(always)]
     unsafe fn vblend_64(self, true_values: Self, false_values: Self) -> Self {
@@ -265,12 +499,72 @@ impl SimdVariableBlendImpl for NeonReg {
         self_from_op!(vbslq_f32, self, true_values, false_values)
     }
     #[inline(always)]
+    unsafe fn vblend_16(self, true_values: Self, false_values: Self) -> Self {
+        self_from_op!(vbslq_u16, self, true_values, false_values)
+    }
+    #[inline(always)]
     unsafe fn vblend_8(self, true_values: Self, false_values: Self) -> Self {
         self_from_op!(vbslq_u8, self, true_values, false_values)
     }
 }
 
-impl SimdImmediateBlendImpl for NeonReg {
+impl SimdInterleave for NeonReg {
+    #[inline(always)]
+    unsafe fn interleave_lower_128(self, _rhs: Self) -> Self {
+        self
+    }
+    map_intrinsic!(interleave_lower_64, vzip1q_u64, self, rhs: Self);
+    map_intrinsic!(interleave_lower_32, vzip1q_u32, self, rhs: Self);
+    map_intrinsic!(interleave_lower_16, vzip1q_u16, self, rhs: Self);
+    map_intrinsic!(interleave_lower_8, vzip1q_u8, self, rhs: Self);
+
+    #[inline(always)]
+    unsafe fn interleave_upper_128(self, _rhs: Self) -> Self {
+        self
+    }
+    map_intrinsic!(interleave_upper_64, vzip2q_u64, self, rhs: Self);
+    map_intrinsic!(interleave_upper_32, vzip2q_u32, self, rhs: Self);
+    map_intrinsic!(interleave_upper_16, vzip2q_u16, self, rhs: Self);
+    map_intrinsic!(interleave_upper_8, vzip2q_u8, self, rhs: Self);
+
+    #[inline(always)]
+    unsafe fn interleave_even_128(self, _rhs: Self) -> Self {
+        self
+    }
+    map_intrinsic!(interleave_even_64, vtrn1q_u64, self, rhs: Self);
+    map_intrinsic!(interleave_even_32, vtrn1q_u32, self, rhs: Self);
+    map_intrinsic!(interleave_even_16, vtrn1q_u16, self, rhs: Self);
+    map_intrinsic!(interleave_even_8, vtrn1q_u8, self, rhs: Self);
+
+    #[inline(always)]
+    unsafe fn interleave_odd_128(self, _rhs: Self) -> Self {
+        self
+    }
+    map_intrinsic!(interleave_odd_64, vtrn2q_u64, self, rhs: Self);
+    map_intrinsic!(interleave_odd_32, vtrn2q_u32, self, rhs: Self);
+    map_intrinsic!(interleave_odd_16, vtrn2q_u16, self, rhs: Self);
+    map_intrinsic!(interleave_odd_8, vtrn2q_u8, self, rhs: Self);
+
+    #[inline(always)]
+    unsafe fn deinterleave_even_128(self, _rhs: Self) -> Self {
+        self
+    }
+    map_intrinsic!(deinterleave_even_64, vuzp1q_u64, self, rhs: Self);
+    map_intrinsic!(deinterleave_even_32, vuzp1q_u32, self, rhs: Self);
+    map_intrinsic!(deinterleave_even_16, vuzp1q_u16, self, rhs: Self);
+    map_intrinsic!(deinterleave_even_8, vuzp1q_u8, self, rhs: Self);
+
+    #[inline(always)]
+    unsafe fn deinterleave_odd_128(self, _rhs: Self) -> Self {
+        self
+    }
+    map_intrinsic!(deinterleave_odd_64, vuzp2q_u64, self, rhs: Self);
+    map_intrinsic!(deinterleave_odd_32, vuzp2q_u32, self, rhs: Self);
+    map_intrinsic!(deinterleave_odd_16, vuzp2q_u16, self, rhs: Self);
+    map_intrinsic!(deinterleave_odd_8, vuzp2q_u8, self, rhs: Self);
+}
+
+impl SimdImmediateBlend for NeonReg {
     #[inline(always)]
     unsafe fn blend_64<const N: i32>(self, false_values: Self) -> Self {
         const {
@@ -285,7 +579,7 @@ impl SimdImmediateBlendImpl for NeonReg {
         ];
 
         let mask = self_from_op!(vld1q_u64, MASKS[N as usize].as_ptr());
-        mask.vblend_64(self, false_values)
+        unsafe { mask.vblend_64(self, false_values) }
     }
 
     #[inline(always)]
@@ -316,16 +610,26 @@ impl SimdImmediateBlendImpl for NeonReg {
         let mask = self_from_op!(vld1q_u32, MASKS[N as usize].as_ptr());
         unsafe { mask.vblend_32(self, false_values) }
     }
+
+    #[inline(always)]
+    unsafe fn blend_16<const N: i32>(self, false_values: Self) -> Self {
+        const {
+            assert!(N < 256, "N must be less than 256");
+        }
+
+        let mask = unsafe { Self::from_bits_16(N as u64) };
+        self_from_op!(vbslq_u16, mask, self, false_values)
+    }
 }
 
-impl SimdMulAddImpl for NeonReg {
+impl SimdMulAdd for NeonReg {
     #[inline(always)]
     unsafe fn mul_add_f64(self, mult: Self, add: Self) -> Self {
         self_from_op!(vfmaq_f64, add, self, mult)
     }
     #[inline(always)]
     unsafe fn mul_sub_f64(self, mult: Self, sub: Self) -> Self {
-        self_from_op!(vfmsq_f64, sub, self, mult).negate_f64()
+        unsafe { self_from_op!(vfmsq_f64, sub, self, mult).negate_f64() }
     }
     #[inline(always)]
     unsafe fn negated_mul_add_f64(self, mult: Self, add: Self) -> Self {
@@ -333,7 +637,7 @@ impl SimdMulAddImpl for NeonReg {
     }
     #[inline(always)]
     unsafe fn negated_mul_sub_f64(self, mult: Self, sub: Self) -> Self {
-        self_from_op!(vfmaq_f64, sub, self, mult).negate_f64()
+        unsafe { self_from_op!(vfmaq_f64, sub, self, mult).negate_f64() }
     }
     #[inline(always)]
     unsafe fn mul_add_f32(self, mult: Self, add: Self) -> Self {
@@ -341,7 +645,7 @@ impl SimdMulAddImpl for NeonReg {
     }
     #[inline(always)]
     unsafe fn mul_sub_f32(self, mult: Self, sub: Self) -> Self {
-        self_from_op!(vfmsq_f32, sub, self, mult).negate_f32()
+        unsafe { self_from_op!(vfmsq_f32, sub, self, mult).negate_f32() }
     }
     #[inline(always)]
     unsafe fn negated_mul_add_f32(self, mult: Self, add: Self) -> Self {
@@ -349,11 +653,11 @@ impl SimdMulAddImpl for NeonReg {
     }
     #[inline(always)]
     unsafe fn negated_mul_sub_f32(self, mult: Self, sub: Self) -> Self {
-        self_from_op!(vfmaq_f32, sub, self, mult).negate_f32()
+        unsafe { self_from_op!(vfmaq_f32, sub, self, mult).negate_f32() }
     }
 }
 
-impl SimdRoundImpl for NeonReg {
+impl SimdRound for NeonReg {
     #[inline(always)]
     unsafe fn round_f64(self) -> Self {
         self_from_op!(vrndnq_f64, self)
@@ -380,156 +684,75 @@ impl SimdRoundImpl for NeonReg {
     }
 }
 
-impl SimdPartialOrdImpl for NeonReg {
+impl SimdPartialOrd for NeonReg {
     type MaskType = Self;
+    map_intrinsic!(cmp_f64_eq, vceqq_f64, self, rhs: Self);
+    map_intrinsic!(cmp_f64_lt, vcltq_f64, self, rhs: Self);
+    map_intrinsic!(cmp_f64_le, vcleq_f64, self, rhs: Self);
+    map_intrinsic!(cmp_f64_gt, vcgtq_f64, self, rhs: Self);
+    map_intrinsic!(cmp_f64_ge, vcgeq_f64, self, rhs: Self);
+    map_intrinsic!(cmp_f32_eq, vceqq_f32, self, rhs: Self);
+    map_intrinsic!(cmp_f32_lt, vcltq_f32, self, rhs: Self);
+    map_intrinsic!(cmp_f32_le, vcleq_f32, self, rhs: Self);
+    map_intrinsic!(cmp_f32_gt, vcgtq_f32, self, rhs: Self);
+    map_intrinsic!(cmp_f32_ge, vcgeq_f32, self, rhs: Self);
+    map_intrinsic!(cmp_i64_eq, vceqq_s64, self, rhs: Self);
+    map_intrinsic!(cmp_i64_gt, vcgtq_s64, self, rhs: Self);
+    map_intrinsic!(cmp_i32_eq, vceqq_s32, self, rhs: Self);
+    map_intrinsic!(cmp_i32_gt, vcgtq_s32, self, rhs: Self);
+    map_intrinsic!(cmp_i16_eq, vceqq_s16, self, rhs: Self);
+    map_intrinsic!(cmp_i16_gt, vcgtq_s16, self, rhs: Self);
+    map_intrinsic!(cmp_i8_eq, vceqq_s8, self, rhs: Self);
+    map_intrinsic!(cmp_i8_gt, vcgtq_s8, self, rhs: Self);
+    map_intrinsic!(cmp_u64_gt, vcgtq_u64, self, rhs: Self);
+    map_intrinsic!(cmp_u32_gt, vcgtq_u32, self, rhs: Self);
+    map_intrinsic!(cmp_u16_gt, vcgtq_u16, self, rhs: Self);
+    map_intrinsic!(cmp_u8_gt, vcgtq_u8, self, rhs: Self);
+    map_intrinsic!(max_f64, vmaxq_f64, self, rhs: Self);
+    map_intrinsic!(min_f64, vminq_f64, self, rhs: Self);
+    map_intrinsic!(max_f32, vmaxq_f32, self, rhs: Self);
+    map_intrinsic!(min_f32, vminq_f32, self, rhs: Self);
+    map_intrinsic!(max_i32, vmaxq_s32, self, rhs: Self);
+    map_intrinsic!(min_i32, vminq_s32, self, rhs: Self);
+    map_intrinsic!(max_i16, vmaxq_s16, self, rhs: Self);
+    map_intrinsic!(min_i16, vminq_s16, self, rhs: Self);
+    map_intrinsic!(max_i8, vmaxq_s8, self, rhs: Self);
+    map_intrinsic!(min_i8, vminq_s8, self, rhs: Self);
+    map_intrinsic!(max_u32, vmaxq_u32, self, rhs: Self);
+    map_intrinsic!(min_u32, vminq_u32, self, rhs: Self);
+    map_intrinsic!(max_u16, vmaxq_u16, self, rhs: Self);
+    map_intrinsic!(min_u16, vminq_u16, self, rhs: Self);
+    map_intrinsic!(max_u8, vmaxq_u8, self, rhs: Self);
+    map_intrinsic!(min_u8, vminq_u8, self, rhs: Self);
+
     #[inline(always)]
-    unsafe fn cmp_f64_eq(self, rhs: Self) -> Self {
-        self_from_op!(vceqq_f64, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn cmp_f64_lt(self, rhs: Self) -> Self {
-        self_from_op!(vcltq_f64, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn cmp_f64_le(self, rhs: Self) -> Self {
-        self_from_op!(vcleq_f64, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn cmp_f64_gt(self, rhs: Self) -> Self {
-        self_from_op!(vcgtq_f64, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn cmp_f64_ge(self, rhs: Self) -> Self {
-        self_from_op!(vcgeq_f64, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn cmp_f64_neq(self, rhs: Self) -> Self {
+    unsafe fn cmp_f64_ne(self, rhs: Self) -> Self {
         unsafe { Self(self.cmp_f64_eq(rhs).not().0) }
     }
     #[inline(always)]
-    unsafe fn cmp_f32_eq(self, rhs: Self) -> Self {
-        self_from_op!(vceqq_f32, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn cmp_f32_lt(self, rhs: Self) -> Self {
-        self_from_op!(vcltq_f32, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn cmp_f32_le(self, rhs: Self) -> Self {
-        self_from_op!(vcleq_f32, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn cmp_f32_gt(self, rhs: Self) -> Self {
-        self_from_op!(vcgtq_f32, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn cmp_f32_ge(self, rhs: Self) -> Self {
-        self_from_op!(vcgeq_f32, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn cmp_f32_neq(self, rhs: Self) -> Self {
+    unsafe fn cmp_f32_ne(self, rhs: Self) -> Self {
         unsafe { Self(self.cmp_f32_eq(rhs).not().0) }
-    }
-    #[inline(always)]
-    unsafe fn cmp_i64_eq(self, rhs: Self) -> Self {
-        self_from_op!(vceqq_s64, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn cmp_i64_gt(self, rhs: Self) -> Self {
-        self_from_op!(vcgtq_s64, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn cmp_i32_eq(self, rhs: Self) -> Self {
-        self_from_op!(vceqq_s32, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn cmp_i32_gt(self, rhs: Self) -> Self {
-        self_from_op!(vcgtq_s32, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn cmp_i16_eq(self, rhs: Self) -> Self {
-        self_from_op!(vceqq_s16, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn cmp_i16_gt(self, rhs: Self) -> Self {
-        self_from_op!(vcgtq_s16, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn cmp_i8_eq(self, rhs: Self) -> Self {
-        self_from_op!(vceqq_s8, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn cmp_i8_gt(self, rhs: Self) -> Self {
-        self_from_op!(vcgtq_s8, self, rhs)
     }
 
     #[inline(always)]
-    unsafe fn max_f64(self, rhs: Self) -> Self {
-        self_from_op!(vmaxq_f64, self, rhs)
+    unsafe fn max_i64(self, rhs: Self) -> Self {
+        unsafe { self.cmp_i64_gt(rhs).vblend_8(self, rhs) }
     }
     #[inline(always)]
-    unsafe fn min_f64(self, rhs: Self) -> Self {
-        self_from_op!(vminq_f64, self, rhs)
+    unsafe fn min_i64(self, rhs: Self) -> Self {
+        unsafe { self.cmp_i64_gt(rhs).vblend_8(rhs, self) }
     }
     #[inline(always)]
-    unsafe fn max_f32(self, rhs: Self) -> Self {
-        self_from_op!(vmaxq_f32, self, rhs)
+    unsafe fn max_u64(self, rhs: Self) -> Self {
+        unsafe { self.cmp_u64_gt(rhs).vblend_8(self, rhs) }
     }
     #[inline(always)]
-    unsafe fn min_f32(self, rhs: Self) -> Self {
-        self_from_op!(vminq_f32, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn max_i32(self, rhs: Self) -> Self {
-        self_from_op!(vmaxq_s32, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn min_i32(self, rhs: Self) -> Self {
-        self_from_op!(vminq_s32, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn max_i16(self, rhs: Self) -> Self {
-        self_from_op!(vmaxq_s16, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn min_i16(self, rhs: Self) -> Self {
-        self_from_op!(vminq_s16, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn max_i8(self, rhs: Self) -> Self {
-        self_from_op!(vmaxq_s8, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn min_i8(self, rhs: Self) -> Self {
-        self_from_op!(vminq_s8, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn max_u32(self, rhs: Self) -> Self {
-        self_from_op!(vmaxq_u32, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn min_u32(self, rhs: Self) -> Self {
-        self_from_op!(vminq_u32, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn max_u16(self, rhs: Self) -> Self {
-        self_from_op!(vmaxq_u16, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn min_u16(self, rhs: Self) -> Self {
-        self_from_op!(vminq_u16, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn max_u8(self, rhs: Self) -> Self {
-        self_from_op!(vmaxq_u8, self, rhs)
-    }
-    #[inline(always)]
-    unsafe fn min_u8(self, rhs: Self) -> Self {
-        self_from_op!(vminq_u8, self, rhs)
+    unsafe fn min_u64(self, rhs: Self) -> Self {
+        unsafe { self.cmp_u64_gt(rhs).vblend_8(rhs, self) }
     }
 }
 
-impl SimdSplatImpl for NeonReg {
+impl SimdSplat for NeonReg {
     #[inline(always)]
     unsafe fn splat_64<T>(val: T) -> Self {
         self_from_op!(vdupq_n_s64, val)
@@ -548,7 +771,7 @@ impl SimdSplatImpl for NeonReg {
     }
 }
 
-impl SimdGatherImpl for NeonReg {
+impl SimdGather for NeonReg {
     unsafe fn gather_32_from_32<T, const B: i32>(self, ptr: *const T) -> Self {
         unsafe {
             let ptr_32 = ptr as *const u32;
@@ -575,7 +798,7 @@ impl SimdGatherImpl for NeonReg {
     }
 }
 
-impl SimdSqrtImpl for NeonReg {
+impl SimdSqrt for NeonReg {
     #[inline(always)]
     unsafe fn sqrt_f64(self) -> Self {
         self_from_op!(vsqrtq_f64, self)
@@ -590,14 +813,14 @@ impl SimdSqrtImpl for NeonReg {
     }
 }
 
-impl SimdAllBitsImpl for NeonReg {
+impl SimdAllBits for NeonReg {
     #[inline(always)]
     unsafe fn all_zero(self) -> bool {
         unsafe { vmaxvq_u8(transmute_copy(&self.0)) == 0 }
     }
 }
 
-impl SimdNegateImpl for NeonReg {
+impl SimdNegate for NeonReg {
     #[inline(always)]
     unsafe fn negate_f64(self) -> Self {
         self_from_op!(vnegq_f64, self)
@@ -608,7 +831,7 @@ impl SimdNegateImpl for NeonReg {
     }
 }
 
-impl SimdBlockShiftImpl for NeonReg {
+impl SimdBlockShift for NeonReg {
     // Stabilize const generic expr plssssss.
     #[inline(always)]
     unsafe fn block_left_byte_shift<const N: i32>(self) -> Self {
@@ -629,7 +852,7 @@ impl SimdBlockShiftImpl for NeonReg {
             13 => self_from_const_op!(vextq_u8, 3, Self::zero(), self),
             14 => self_from_const_op!(vextq_u8, 2, Self::zero(), self),
             15 => self_from_const_op!(vextq_u8, 1, Self::zero(), self),
-            16 => Self::zero(),
+            16 => unsafe { Self::zero() },
             _ => unreachable!(),
         }
     }
@@ -703,7 +926,7 @@ impl SimdMaskBitConversion for NeonReg {
     }
 }
 
-impl SimdLaneShiftImpl for NeonReg {
+impl SimdLaneShift for NeonReg {
     #[inline(always)]
     unsafe fn left_lane_shift_32(self, n: u32) -> Self {
         match n {
@@ -725,4 +948,3 @@ impl SimdLaneShiftImpl for NeonReg {
         }
     }
 }
-

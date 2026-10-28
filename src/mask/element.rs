@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 use std::ops::*;
 
-use crate::architectures::interface::{Arch, SimdAllBitsImpl, *};
+use crate::architectures::interface::{Arch, SimdAllBits, *};
 use crate::mask::Mask;
 use crate::register::Simd;
 use crate::simd_types::*;
@@ -19,7 +19,6 @@ impl<T: SimdElement, A: Arch> Mask<T, A> {
     pub fn raw_cast<S: SimdElement>(self) -> Mask<S, A> {
         Mask::new(self.data)
     }
-
 
     #[inline(always)]
     pub fn all_false(self) -> bool {
@@ -80,7 +79,6 @@ impl<T: SimdElement, A: Arch> Mask<T, A> {
         unsafe { Self::new(self.data.and_not(rhs.data)) }
     }
 
-    // TODO: Add 16 bit select.
     pub fn select(self, true_values: Simd<T, A>, false_values: Simd<T, A>) -> Simd<T, A> {
         unsafe {
             match T::BIT_SIZE {
@@ -90,10 +88,12 @@ impl<T: SimdElement, A: Arch> Mask<T, A> {
                 BitSize::Size32 => {
                     Simd::new(self.data.vblend_32(true_values.data, false_values.data))
                 }
+                BitSize::Size16 => {
+                    Simd::new(self.data.vblend_16(true_values.data, false_values.data))
+                }
                 BitSize::Size8 => {
                     Simd::new(self.data.vblend_8(true_values.data, false_values.data))
                 }
-                _ => panic!("Select for 16 bit types not implemented yet!"),
             }
         }
     }
