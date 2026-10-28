@@ -294,7 +294,7 @@ impl SimdPermute for NeonReg {
             let lo = self_from_const_op!(vdupq_laneq_u64, 0, self);
             let hi = self_from_const_op!(vdupq_laneq_u64, 1, self);
             let mask = self_from_op!(vtstq_u64, rhs, Self::splat_64(1u64));
-            mask.vblend_64(lo, hi)
+            mask.vblend_64(hi, lo)
         }
     }
     #[inline(always)]
@@ -310,7 +310,7 @@ impl SimdPermute for NeonReg {
     unsafe fn vshuffle_16(self, rhs: Self) -> Self {
         unsafe {
             let mult = Self::splat_16(0x0202u16);
-            let add = Self::splat_32(0x0100u32);
+            let add = Self::splat_16(0x0100u16);
             let byte_indices = self_from_op!(vmlaq_u16, add, rhs, mult);
             self_from_op!(vqtbl1q_u8, self, byte_indices)
         }
