@@ -270,9 +270,9 @@ impl SimdPermute for Avx512Reg {
                 0b00 => self_from_const_op!(_mm512_mask_permutex_epi64, 0x44, self, 0xCCu8, rhs),
                 0b11 => self_from_const_op!(_mm512_mask_permutex_epi64, 0xEE, rhs, 0x33u8, self),
                 0b01 => {
-                    let indices = self_from_op!(_mm512_setr_epi64, 2, 3, 8, 9, 6, 7, 12, 13);
-                    self_from_op!(_mm512_permutex2var_epi64, self, indices, rhs)
-                },
+                    let indices = _mm512_setr_epi64(2, 3, 8, 9, 6, 7, 12, 13);
+                    Self(_mm512_permutex2var_epi64(self.0, indices, rhs.0))
+                }
                 _ => unreachable!(),
             }
         }
@@ -383,7 +383,7 @@ impl SimdInterleave for Avx512Reg {
     #[inline(always)]
     unsafe fn interleave_lower_64(self, rhs: Self) -> Self {
         unsafe {
-            let indices = self_from_op!(_mm512_setr_epi64, 0, 8, 1, 9, 2, 10, 3, 11);
+            let indices = Self(_mm512_setr_epi64(0, 8, 1, 9, 2, 10, 3, 11));
             self_from_op!(_mm512_permutex2var_epi64, self, indices, rhs)
         }
     }
@@ -391,10 +391,10 @@ impl SimdInterleave for Avx512Reg {
     unsafe fn interleave_lower_32(self, rhs: Self) -> Self {
         unsafe {
             #[rustfmt::skip]
-            let indices = self_from_op!(_mm512_setr_epi32,
+            let indices = Self(_mm512_setr_epi32(
                 0, 16, 1, 17, 2, 18, 3, 19,
                 4, 20, 5, 21, 6, 22, 7, 23
-            );
+            ));
             self_from_op!(_mm512_permutex2var_epi32, self, indices, rhs)
         }
     }
@@ -417,14 +417,14 @@ impl SimdInterleave for Avx512Reg {
     #[inline(always)]
     unsafe fn interleave_upper_128(self, rhs: Self) -> Self {
         unsafe {
-            let indices = self_from_op!(_mm512_setr_epi64, 4, 5, 12, 13, 6, 7, 14, 15);
+            let indices = Self(_mm512_setr_epi64(4, 5, 12, 13, 6, 7, 14, 15));
             self_from_op!(_mm512_permutex2var_epi64, self, indices, rhs)
         }
     }
     #[inline(always)]
     unsafe fn interleave_upper_64(self, rhs: Self) -> Self {
         unsafe {
-            let indices = self_from_op!(_mm512_setr_epi64, 4, 12, 5, 13, 6, 14, 7, 15);
+            let indices = Self(_mm512_setr_epi64(4, 12, 5, 13, 6, 14, 7, 15));
             self_from_op!(_mm512_permutex2var_epi64, self, indices, rhs)
         }
     }
@@ -432,10 +432,10 @@ impl SimdInterleave for Avx512Reg {
     unsafe fn interleave_upper_32(self, rhs: Self) -> Self {
         unsafe {
             #[rustfmt::skip]
-            let indices = self_from_op!(_mm512_setr_epi32,
+            let indices = Self(_mm512_setr_epi32(
                 8, 24, 9, 25, 10, 26, 11, 27,
                 12, 28, 13, 29, 14, 30, 15, 31
-            );
+            ));
             self_from_op!(_mm512_permutex2var_epi32, self, indices, rhs)
         }
     }
@@ -510,7 +510,7 @@ impl SimdInterleave for Avx512Reg {
     unsafe fn deinterleave_even_64(self, rhs: Self) -> Self {
         unsafe {
             let shuf = self.shuffle2_64::<0>(rhs);
-            let indices = self_from_op!(_mm512_setr_epi64, 0, 2, 4, 6, 1, 3, 5, 7);
+            let indices = Self(_mm512_setr_epi64(0, 2, 4, 6, 1, 3, 5, 7));
             shuf.vpermute_64(indices)
         }
     }
@@ -519,7 +519,7 @@ impl SimdInterleave for Avx512Reg {
     unsafe fn deinterleave_even_32(self, rhs: Self) -> Self {
         unsafe {
             let shuf = self.shuffle2_32::<0x88>(rhs);
-            let indices = self_from_op!(_mm512_setr_epi64, 0, 2, 4, 6, 1, 3, 5, 7);
+            let indices = Self(_mm512_setr_epi64(0, 2, 4, 6, 1, 3, 5, 7));
             shuf.vpermute_64(indices)
         }
     }
@@ -531,7 +531,7 @@ impl SimdInterleave for Avx512Reg {
             let low = self.and(mask);
             let high = rhs.and(mask);
             let packed = self_from_op!(_mm512_packus_epi32, low, high);
-            let indices = self_from_op!(_mm512_setr_epi64, 0, 2, 4, 6, 1, 3, 5, 7);
+            let indices = Self(_mm512_setr_epi64(0, 2, 4, 6, 1, 3, 5, 7));
             packed.vpermute_64(indices)
         }
     }
@@ -543,7 +543,7 @@ impl SimdInterleave for Avx512Reg {
             let low = self.and(mask);
             let high = rhs.and(mask);
             let packed = self_from_op!(_mm256_packus_epi16, low, high);
-            let indices = self_from_op!(_mm512_setr_epi64, 0, 2, 4, 6, 1, 3, 5, 7);
+            let indices = Self(_mm512_setr_epi64(0, 2, 4, 6, 1, 3, 5, 7));
             packed.vpermute_64(indices)
         }
     }
@@ -557,7 +557,7 @@ impl SimdInterleave for Avx512Reg {
     unsafe fn deinterleave_odd_64(self, rhs: Self) -> Self {
         unsafe {
             let shuf = self.shuffle2_64::<3>(rhs);
-            let indices = self_from_op!(_mm512_setr_epi64, 0, 2, 4, 6, 1, 3, 5, 7);
+            let indices = Self(_mm512_setr_epi64(0, 2, 4, 6, 1, 3, 5, 7));
             shuf.vpermute_64(indices)
         }
     }
@@ -566,7 +566,7 @@ impl SimdInterleave for Avx512Reg {
     unsafe fn deinterleave_odd_32(self, rhs: Self) -> Self {
         unsafe {
             let shuf = self.shuffle2_32::<0xDD>(rhs);
-            let indices = self_from_op!(_mm512_setr_epi64, 0, 2, 4, 6, 1, 3, 5, 7);
+            let indices = Self(_mm512_setr_epi64(0, 2, 4, 6, 1, 3, 5, 7));
             shuf.vpermute_64(indices)
         }
     }
@@ -577,7 +577,7 @@ impl SimdInterleave for Avx512Reg {
             let low = self.srli_32::<16>();
             let high = rhs.srli_32::<16>();
             let packed = self_from_op!(_mm256_packus_epi32, low, high);
-            let indices = self_from_op!(_mm512_setr_epi64, 0, 2, 4, 6, 1, 3, 5, 7);
+            let indices = Self(_mm512_setr_epi64(0, 2, 4, 6, 1, 3, 5, 7));
             packed.vpermute_64(indices)
         }
     }
@@ -588,7 +588,7 @@ impl SimdInterleave for Avx512Reg {
             let low = self.srli_16::<8>();
             let high = rhs.srli_16::<8>();
             let packed = self_from_op!(_mm256_packus_epi16, low, high);
-            let indices = self_from_op!(_mm512_setr_epi64, 0, 2, 4, 6, 1, 3, 5, 7);
+            let indices = Self(_mm512_setr_epi64(0, 2, 4, 6, 1, 3, 5, 7));
             packed.vpermute_64(indices)
         }
     }
@@ -686,7 +686,7 @@ macro_rules! map_fp_cmp {
         unsafe fn $func(self, rhs: Self) -> Self::MaskType {
             Avx512Mask(execute_const_intrinsic!($intrinsic, $op, self, rhs) as u64)
         }
-    }
+    };
 }
 
 macro_rules! map_int_cmp {
@@ -695,7 +695,7 @@ macro_rules! map_int_cmp {
         unsafe fn $func(self, rhs: Self) -> Self::MaskType {
             Avx512Mask(execute_intrinsic!($intrinsic, self, rhs) as u64)
         }
-    }
+    };
 }
 
 impl SimdPartialOrd for Avx512Reg {
@@ -794,8 +794,6 @@ impl SimdGather for Avx512Reg {
     unsafe fn gather_32_from_32<T, const B: i32>(self, ptr: *const T) -> Self {
         self_from_const_op!(_mm512_i32gather_epi32, B, self, ptr)
     }
-    // #[inline(always)] unsafe fn gather_64_from_32<T, const B: i32>(self, ptr: *const T) -> Self { self_from_const_op!(_mm512_i32gather_epi64, B, ptr, self) }
-    // #[inline(always)] unsafe fn gather_32_from_64<T, const B: i32>(self, ptr: *const T) -> Self { self_from_const_op!(_mm512_i64gather_epi32, B, ptr, self) }
     #[inline(always)]
     unsafe fn gather_64_from_64<T, const B: i32>(self, ptr: *const T) -> Self {
         self_from_const_op!(_mm512_i64gather_epi64, B, self, ptr)
