@@ -512,10 +512,7 @@ impl SimdInterleave for Avx512Reg {
     }
     #[inline(always)]
     unsafe fn deinterleave_even_128(self, rhs: Self) -> Self {
-        unsafe {
-            let indices = Self(_mm512_setr_epi64(0, 1, 4, 5, 8, 9, 12, 13));
-            self_from_op!(_mm512_permutex2var_epi64, self, indices, rhs)
-        }
+        unsafe { self_from_const_op!(_mm512_shuffle_i64x2, 0x88, self, rhs) }
     }
 
     #[inline(always)]
@@ -562,10 +559,7 @@ impl SimdInterleave for Avx512Reg {
 
     #[inline(always)]
     unsafe fn deinterleave_odd_128(self, rhs: Self) -> Self {
-        unsafe {
-            let indices = Self(_mm512_setr_epi64(2, 3, 6, 7, 10, 11, 14, 15));
-            self_from_op!(_mm512_permutex2var_epi64, self, indices, rhs)
-        }
+        unsafe { self_from_const_op!(_mm512_shuffle_i64x2, 0xDD, self, rhs) }
     }
 
     #[inline(always)]
