@@ -4,7 +4,7 @@ use crate::register::Simd;
 
 // Static dispatch for identifying lane sizes and number of simd registers.
 cfg_select! {
-    all(target_arch = "x86_64", target_feature = "avx512f", target_feature = "fma") => {
+    all(target_arch = "x86_64", target_feature = "avx512f", target_feature = "avx512bw", target_feature = "fma") => {
         use crate::architectures::arch::Avx512;
         pub type StaticSimd<T> = Simd<T, Avx512>;
         pub type StaticMask<T> = Mask<T, Avx512>;

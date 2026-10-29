@@ -9,7 +9,7 @@ mod enable_targets;
 
 const FEATURES: &[(&str, &str, &str)] = if cfg!(target_arch = "x86_64") {
     &[
-        ("Avx512", "avx512", "avx512f,fma"),
+        ("Avx512", "avx512", "avx512f,avx512bw,fma"),
         ("Avx2", "avx2", "avx2,fma"),
         ("Sse", "sse4", "sse4.2"),
         ("Scalar128", "scalar", ""),
