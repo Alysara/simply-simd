@@ -593,6 +593,90 @@ impl<T: SimdWideType, A: Arch> Simd<T, A> {
             }
         }
     }
+
+    /// Takes the lower halves of two registers and interleaves
+    /// their elements together.
+    #[inline(always)]
+    pub fn interleave_lower(self, rhs: Self) -> Self {
+        unsafe {
+            match T::BIT_SIZE {
+                BitSize::Size64 => Self::new(self.data.interleave_lower_64(rhs.data)),
+                BitSize::Size32 => Self::new(self.data.interleave_lower_32(rhs.data)),
+                BitSize::Size16 => Self::new(self.data.interleave_lower_16(rhs.data)),
+                BitSize::Size8 => Self::new(self.data.interleave_lower_8(rhs.data)),
+            }
+        }
+    }
+
+    /// Takes the upper halves of two registers and interleaves
+    /// their elements together.
+    #[inline(always)]
+    pub fn interleave_upper(self, rhs: Self) -> Self {
+        unsafe {
+            match T::BIT_SIZE {
+                BitSize::Size64 => Self::new(self.data.interleave_upper_64(rhs.data)),
+                BitSize::Size32 => Self::new(self.data.interleave_upper_32(rhs.data)),
+                BitSize::Size16 => Self::new(self.data.interleave_upper_16(rhs.data)),
+                BitSize::Size8 => Self::new(self.data.interleave_upper_8(rhs.data)),
+            }
+        }
+    }
+
+    /// Takes the lower halves each 128-bit lane of two registers and
+    /// interleaves their elements. This can be cheaper than
+    /// a full interleave on wider simd architectures.
+    #[inline(always)]
+    pub fn interleave_lower_block(self, rhs: Self) -> Self {
+        unsafe {
+            match T::BIT_SIZE {
+                BitSize::Size64 => Self::new(self.data.interleave_lower_block_64(rhs.data)),
+                BitSize::Size32 => Self::new(self.data.interleave_lower_block_32(rhs.data)),
+                BitSize::Size16 => Self::new(self.data.interleave_lower_block_16(rhs.data)),
+                BitSize::Size8 => Self::new(self.data.interleave_lower_block_8(rhs.data)),
+            }
+        }
+    }
+
+    /// Takes the upper halves each 128-bit lane of two registers and
+    /// interleaves their elements. This can be cheaper than
+    /// a full interleave on wider simd architectures.
+    #[inline(always)]
+    pub fn interleave_upper_block(self, rhs: Self) -> Self {
+        unsafe {
+            match T::BIT_SIZE {
+                BitSize::Size64 => Self::new(self.data.interleave_upper_block_64(rhs.data)),
+                BitSize::Size32 => Self::new(self.data.interleave_upper_block_32(rhs.data)),
+                BitSize::Size16 => Self::new(self.data.interleave_upper_block_16(rhs.data)),
+                BitSize::Size8 => Self::new(self.data.interleave_upper_block_8(rhs.data)),
+            }
+        }
+    }
+
+    /// Interleaves the even elements of two registers together.
+    #[inline(always)]
+    pub fn interleave_even(self, rhs: Self) -> Self {
+        unsafe {
+            match T::BIT_SIZE {
+                BitSize::Size64 => Self::new(self.data.interleave_even_64(rhs.data)),
+                BitSize::Size32 => Self::new(self.data.interleave_even_32(rhs.data)),
+                BitSize::Size16 => Self::new(self.data.interleave_even_16(rhs.data)),
+                BitSize::Size8 => Self::new(self.data.interleave_even_8(rhs.data)),
+            }
+        }
+    }
+
+    /// Interleaves the odd elements of two registers together.
+    #[inline(always)]
+    pub fn interleave_odd(self, rhs: Self) -> Self {
+        unsafe {
+            match T::BIT_SIZE {
+                BitSize::Size64 => Self::new(self.data.interleave_odd_64(rhs.data)),
+                BitSize::Size32 => Self::new(self.data.interleave_odd_32(rhs.data)),
+                BitSize::Size16 => Self::new(self.data.interleave_odd_16(rhs.data)),
+                BitSize::Size8 => Self::new(self.data.interleave_odd_8(rhs.data)),
+            }
+        }
+    }
 }
 
 impl<T: SimdElement, A: Arch> Simd<T, A> {
@@ -767,6 +851,70 @@ impl<T: SimdElement, A: Arch> Simd<T, A> {
     #[inline(always)]
     pub fn interleave_upper_8(self, rhs: Self) -> Self {
         unsafe { Self::new(self.data.interleave_upper_8(rhs.data)) }
+    }
+
+    /// Takes the lower halves each 128-bit lane of two registers and
+    /// interleaves them in 64-bit chunks. This can be cheaper than
+    /// a full interleave on wider simd architectures.
+    #[inline(always)]
+    pub fn interleave_lower_block_64(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_lower_block_64(rhs.data)) }
+    }
+
+    /// Takes the lower halves each 128-bit lane of two registers and
+    /// interleaves them in 32-bit chunks. This can be cheaper than
+    /// a full interleave on wider simd architectures.
+    #[inline(always)]
+    pub fn interleave_lower_block_32(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_lower_block_32(rhs.data)) }
+    }
+
+    /// Takes the lower halves each 128-bit lane of two registers and
+    /// interleaves them in 16-bit chunks. This can be cheaper than
+    /// a full interleave on wider simd architectures.
+    #[inline(always)]
+    pub fn interleave_lower_block_16(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_lower_block_16(rhs.data)) }
+    }
+
+    /// Takes the lower halves each 128-bit lane of two registers and
+    /// interleaves them in 8-bit chunks. This can be cheaper than
+    /// a full interleave on wider simd architectures.
+    #[inline(always)]
+    pub fn interleave_lower_block_8(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_lower_block_8(rhs.data)) }
+    }
+
+    /// Takes the upper halves each 128-bit lane of two registers and
+    /// interleaves them in 64-bit chunks. This can be cheaper than
+    /// a full interleave on wider simd architectures.
+    #[inline(always)]
+    pub fn interleave_upper_block_64(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_upper_block_64(rhs.data)) }
+    }
+
+    /// Takes the upper halves each 128-bit lane of two registers and
+    /// interleaves them in 32-bit chunks. This can be cheaper than
+    /// a full interleave on wider simd architectures.
+    #[inline(always)]
+    pub fn interleave_upper_block_32(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_upper_block_32(rhs.data)) }
+    }
+
+    /// Takes the upper halves each 128-bit lane of two registers and
+    /// interleaves them in 16-bit chunks. This can be cheaper than
+    /// a full interleave on wider simd architectures.
+    #[inline(always)]
+    pub fn interleave_upper_block_16(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_upper_block_16(rhs.data)) }
+    }
+
+    /// Takes the upper halves each 128-bit lane of two registers and
+    /// interleaves them in 8-bit chunks. This can be cheaper than
+    /// a full interleave on wider simd architectures.
+    #[inline(always)]
+    pub fn interleave_upper_block_8(self, rhs: Self) -> Self {
+        unsafe { Self::new(self.data.interleave_upper_block_8(rhs.data)) }
     }
 
     /// Interleaves the even 128-bit chunks of two registers.

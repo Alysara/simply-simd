@@ -71,7 +71,7 @@ macro_rules! map_scalar_op {
         unsafe fn $func(self, rhs: Self) -> Self {
             scalar_func_op!($type, $op, self, rhs, $size)
         }
-    }
+    };
 }
 
 macro_rules! scalar_self_op {
@@ -797,6 +797,33 @@ macro_rules! map_interleave_hilo {
     };
 }
 
+macro_rules! map_interleave_hilo_block {
+    ($func:ident, $ty:ty, $size:expr, $offset:expr) => {
+        #[inline(always)]
+        unsafe fn $func(self, rhs: Self) -> Self {
+            unsafe {
+                let mut new = Self([0; N]);
+                let new_ptr = new.0.as_mut_ptr() as *mut $ty;
+                let self_ptr = self.0.as_ptr() as *const $ty;
+                let rhs_ptr = rhs.0.as_ptr() as *const $ty;
+
+                for b in 0..(N / 16) {
+                    let width = 16 / size_of::<$ty>();
+                    let loops = width / 2;
+                    let offset = if $offset { loops } else { 0 };
+                    let base = b * width;
+                    for i in 0..width {
+                        *new_ptr.add(base + i * 2) = *self_ptr.add(base + i + offset);
+                        *new_ptr.add(base + i * 2 + 1) = *rhs_ptr.add(base + i + offset);
+                    }
+                }
+
+                new
+            }
+        }
+    };
+}
+
 macro_rules! map_interleave_even {
     ($func:ident, $ty:ty, $size:expr) => {
         #[inline(always)]
@@ -890,6 +917,23 @@ macro_rules! map_deinterleave_odd {
 }
 
 impl<const N: usize> SimdInterleave for ScalarReg<N> {
+    map_interleave_hilo!(interleave_lower_64, u64, N, false);
+    map_interleave_hilo!(interleave_lower_32, u32, N, false);
+    map_interleave_hilo!(interleave_lower_16, u16, N, false);
+    map_interleave_hilo!(interleave_lower_8, u8, N, false);
+    map_interleave_hilo!(interleave_upper_64, u64, N, true);
+    map_interleave_hilo!(interleave_upper_32, u32, N, true);
+    map_interleave_hilo!(interleave_upper_16, u16, N, true);
+    map_interleave_hilo!(interleave_upper_8, u8, N, true);
+    map_interleave_hilo_block!(interleave_lower_block_64, u64, N, false);
+    map_interleave_hilo_block!(interleave_lower_block_32, u32, N, false);
+    map_interleave_hilo_block!(interleave_lower_block_16, u16, N, false);
+    map_interleave_hilo_block!(interleave_lower_block_8, u8, N, false);
+    map_interleave_hilo_block!(interleave_upper_block_64, u64, N, true);
+    map_interleave_hilo_block!(interleave_upper_block_32, u32, N, true);
+    map_interleave_hilo_block!(interleave_upper_block_16, u16, N, true);
+    map_interleave_hilo_block!(interleave_upper_block_8, u8, N, true);
+
     #[inline(always)]
     unsafe fn interleave_lower_128(self, rhs: Self) -> Self {
         if N == 16 {
@@ -913,11 +957,6 @@ impl<const N: usize> SimdInterleave for ScalarReg<N> {
         }
     }
 
-    map_interleave_hilo!(interleave_lower_64, u64, N, false);
-    map_interleave_hilo!(interleave_lower_32, u32, N, false);
-    map_interleave_hilo!(interleave_lower_16, u16, N, false);
-    map_interleave_hilo!(interleave_lower_8, u8, N, false);
-
     unsafe fn interleave_upper_128(self, rhs: Self) -> Self {
         if N == 16 {
             return self;
@@ -940,10 +979,6 @@ impl<const N: usize> SimdInterleave for ScalarReg<N> {
             new
         }
     }
-    map_interleave_hilo!(interleave_upper_64, u64, N, true);
-    map_interleave_hilo!(interleave_upper_32, u32, N, true);
-    map_interleave_hilo!(interleave_upper_16, u16, N, true);
-    map_interleave_hilo!(interleave_upper_8, u8, N, true);
 
     unsafe fn interleave_even_128(self, rhs: Self) -> Self {
         if N == 16 {

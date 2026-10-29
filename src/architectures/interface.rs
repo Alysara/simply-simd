@@ -283,6 +283,14 @@ pub trait SimdInterleave {
     unsafe fn interleave_upper_32(self, rhs: Self) -> Self;
     unsafe fn interleave_upper_16(self, rhs: Self) -> Self;
     unsafe fn interleave_upper_8(self, rhs: Self) -> Self;
+    unsafe fn interleave_lower_block_64(self, rhs: Self) -> Self;
+    unsafe fn interleave_lower_block_32(self, rhs: Self) -> Self;
+    unsafe fn interleave_lower_block_16(self, rhs: Self) -> Self;
+    unsafe fn interleave_lower_block_8(self, rhs: Self) -> Self;
+    unsafe fn interleave_upper_block_64(self, rhs: Self) -> Self;
+    unsafe fn interleave_upper_block_32(self, rhs: Self) -> Self;
+    unsafe fn interleave_upper_block_16(self, rhs: Self) -> Self;
+    unsafe fn interleave_upper_block_8(self, rhs: Self) -> Self;
     unsafe fn interleave_even_128(self, rhs: Self) -> Self;
     unsafe fn interleave_even_64(self, rhs: Self) -> Self;
     unsafe fn interleave_even_32(self, rhs: Self) -> Self;

@@ -511,23 +511,31 @@ impl SimdVariableBlend for NeonReg {
 }
 
 impl SimdInterleave for NeonReg {
-    #[inline(always)]
-    unsafe fn interleave_lower_128(self, _rhs: Self) -> Self {
-        self
-    }
     map_intrinsic!(interleave_lower_64, vzip1q_u64, self, rhs: Self);
     map_intrinsic!(interleave_lower_32, vzip1q_u32, self, rhs: Self);
     map_intrinsic!(interleave_lower_16, vzip1q_u16, self, rhs: Self);
     map_intrinsic!(interleave_lower_8, vzip1q_u8, self, rhs: Self);
+    map_intrinsic!(interleave_upper_64, vzip2q_u64, self, rhs: Self);
+    map_intrinsic!(interleave_upper_32, vzip2q_u32, self, rhs: Self);
+    map_intrinsic!(interleave_upper_16, vzip2q_u16, self, rhs: Self);
+    map_intrinsic!(interleave_upper_8, vzip2q_u8, self, rhs: Self);
+    map_intrinsic!(interleave_lower_block_64, vzip1q_u64, self, rhs: Self);
+    map_intrinsic!(interleave_lower_block_32, vzip1q_u32, self, rhs: Self);
+    map_intrinsic!(interleave_lower_block_16, vzip1q_u16, self, rhs: Self);
+    map_intrinsic!(interleave_lower_block_8, vzip1q_u8, self, rhs: Self);
+    map_intrinsic!(interleave_upper_block_64, vzip2q_u64, self, rhs: Self);
+    map_intrinsic!(interleave_upper_block_32, vzip2q_u32, self, rhs: Self);
+    map_intrinsic!(interleave_upper_block_16, vzip2q_u16, self, rhs: Self);
+    map_intrinsic!(interleave_upper_block_8, vzip2q_u8, self, rhs: Self);
+    #[inline(always)]
+    unsafe fn interleave_lower_128(self, _rhs: Self) -> Self {
+        self
+    }
 
     #[inline(always)]
     unsafe fn interleave_upper_128(self, _rhs: Self) -> Self {
         self
     }
-    map_intrinsic!(interleave_upper_64, vzip2q_u64, self, rhs: Self);
-    map_intrinsic!(interleave_upper_32, vzip2q_u32, self, rhs: Self);
-    map_intrinsic!(interleave_upper_16, vzip2q_u16, self, rhs: Self);
-    map_intrinsic!(interleave_upper_8, vzip2q_u8, self, rhs: Self);
 
     #[inline(always)]
     unsafe fn interleave_even_128(self, _rhs: Self) -> Self {

@@ -461,6 +461,15 @@ impl SimdImmediateBlend for Avx2Reg {
 }
 
 impl SimdInterleave for Avx2Reg {
+    map_intrinsic!(interleave_lower_block_64, _mm256_unpacklo_epi64, self, rhs: Self);
+    map_intrinsic!(interleave_lower_block_32, _mm256_unpacklo_epi32, self, rhs: Self);
+    map_intrinsic!(interleave_lower_block_16, _mm256_unpacklo_epi16, self, rhs: Self);
+    map_intrinsic!(interleave_lower_block_8, _mm256_unpacklo_epi8, self, rhs: Self);
+    map_intrinsic!(interleave_upper_block_64, _mm256_unpackhi_epi64, self, rhs: Self);
+    map_intrinsic!(interleave_upper_block_32, _mm256_unpackhi_epi32, self, rhs: Self);
+    map_intrinsic!(interleave_upper_block_16, _mm256_unpackhi_epi16, self, rhs: Self);
+    map_intrinsic!(interleave_upper_block_8, _mm256_unpackhi_epi8, self, rhs: Self);
+
     #[inline(always)]
     unsafe fn interleave_lower_128(self, rhs: Self) -> Self {
         unsafe { self.shuffle2_128::<0>(rhs) }

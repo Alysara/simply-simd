@@ -446,25 +446,32 @@ impl SimdImmediateBlend for SseReg {
 }
 
 impl SimdInterleave for SseReg {
+    map_intrinsic!(interleave_lower_64, _mm_unpacklo_epi64, self, rhs: Self);
+    map_intrinsic!(interleave_lower_32, _mm_unpacklo_epi32, self, rhs: Self);
+    map_intrinsic!(interleave_lower_16, _mm_unpacklo_epi16, self, rhs: Self);
+    map_intrinsic!(interleave_lower_8, _mm_unpacklo_epi8, self, rhs: Self);
+    map_intrinsic!(interleave_upper_64, _mm_unpackhi_epi64, self, rhs: Self);
+    map_intrinsic!(interleave_upper_32, _mm_unpackhi_epi32, self, rhs: Self);
+    map_intrinsic!(interleave_upper_16, _mm_unpackhi_epi16, self, rhs: Self);
+    map_intrinsic!(interleave_upper_8, _mm_unpackhi_epi8, self, rhs: Self);
+    map_intrinsic!(interleave_lower_block_64, _mm_unpacklo_epi64, self, rhs: Self);
+    map_intrinsic!(interleave_lower_block_32, _mm_unpacklo_epi32, self, rhs: Self);
+    map_intrinsic!(interleave_lower_block_16, _mm_unpacklo_epi16, self, rhs: Self);
+    map_intrinsic!(interleave_lower_block_8, _mm_unpacklo_epi8, self, rhs: Self);
+    map_intrinsic!(interleave_upper_block_64, _mm_unpackhi_epi64, self, rhs: Self);
+    map_intrinsic!(interleave_upper_block_32, _mm_unpackhi_epi32, self, rhs: Self);
+    map_intrinsic!(interleave_upper_block_16, _mm_unpackhi_epi16, self, rhs: Self);
+    map_intrinsic!(interleave_upper_block_8, _mm_unpackhi_epi8, self, rhs: Self);
+
     #[inline(always)]
     unsafe fn interleave_lower_128(self, _rhs: Self) -> Self {
         self
     }
 
-    map_intrinsic!(interleave_lower_64, _mm_unpacklo_epi64, self, rhs: Self);
-    map_intrinsic!(interleave_lower_32, _mm_unpacklo_epi32, self, rhs: Self);
-    map_intrinsic!(interleave_lower_16, _mm_unpacklo_epi16, self, rhs: Self);
-    map_intrinsic!(interleave_lower_8, _mm_unpacklo_epi8, self, rhs: Self);
-
     #[inline(always)]
     unsafe fn interleave_upper_128(self, _rhs: Self) -> Self {
         self
     }
-
-    map_intrinsic!(interleave_upper_64, _mm_unpackhi_epi64, self, rhs: Self);
-    map_intrinsic!(interleave_upper_32, _mm_unpackhi_epi32, self, rhs: Self);
-    map_intrinsic!(interleave_upper_16, _mm_unpackhi_epi16, self, rhs: Self);
-    map_intrinsic!(interleave_upper_8, _mm_unpackhi_epi8, self, rhs: Self);
 
     #[inline(always)]
     unsafe fn interleave_even_128(self, _rhs: Self) -> Self {

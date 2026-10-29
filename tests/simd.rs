@@ -219,6 +219,32 @@ simd_vec_tests!(shuffle_8_test, [[f32, u8 -> f32], [i32, u8 -> i32], [u64, u8 ->
 
 // === Interleaves ===
 
+simd_vec_tests!(interleave_lower_block_64_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_lower_block_64(y)
+});
+simd_vec_tests!(interleave_lower_block_32_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_lower_block_32(y)
+});
+simd_vec_tests!(interleave_lower_block_16_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_lower_block_16(y)
+});
+simd_vec_tests!(interleave_lower_block_8_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_lower_block_8(y)
+});
+
+simd_vec_tests!(interleave_upper_block_64_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_upper_block_64(y)
+});
+simd_vec_tests!(interleave_upper_block_32_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_upper_block_32(y)
+});
+simd_vec_tests!(interleave_upper_block_16_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_upper_block_16(y)
+});
+simd_vec_tests!(interleave_upper_block_8_test, [f32, f64, u16, u32], |x, y| {
+    x.interleave_upper_block_8(y)
+});
+
 simd_vec_tests!(interleave_lower_128_test, [f32, f64, u16, u32], |x, y| {
     x.interleave_lower_128(y)
 });

@@ -375,6 +375,15 @@ impl SimdImmediateBlend for Avx512Reg {
 }
 
 impl SimdInterleave for Avx512Reg {
+    map_intrinsic!(interleave_lower_block_64, _mm512_unpacklo_epi64, self, rhs: Self);
+    map_intrinsic!(interleave_lower_block_32, _mm512_unpacklo_epi32, self, rhs: Self);
+    map_intrinsic!(interleave_lower_block_16, _mm512_unpacklo_epi16, self, rhs: Self);
+    map_intrinsic!(interleave_lower_block_8, _mm512_unpacklo_epi8, self, rhs: Self);
+    map_intrinsic!(interleave_upper_block_64, _mm512_unpackhi_epi64, self, rhs: Self);
+    map_intrinsic!(interleave_upper_block_32, _mm512_unpackhi_epi32, self, rhs: Self);
+    map_intrinsic!(interleave_upper_block_16, _mm512_unpackhi_epi16, self, rhs: Self);
+    map_intrinsic!(interleave_upper_block_8, _mm512_unpackhi_epi8, self, rhs: Self);
+
     #[inline(always)]
     unsafe fn interleave_lower_128(self, rhs: Self) -> Self {
         let indices = unsafe { Self(_mm512_setr_epi64(0, 1, 8, 9, 2, 3, 10, 11)) };
