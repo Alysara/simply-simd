@@ -1055,28 +1055,28 @@ impl<T: SimdElement, A: Arch> Simd<T, A> {
     /// the lower half of the second register.
     #[inline(always)]
     pub fn concat_lo_lo(self, rhs: Self) -> Self {
-        self.shuffle2_imm_128::<0b00>(rhs)
+        self.permute2_imm_half::<0b00>(rhs)
     }
 
     /// Concatenates the lower half of the first register with
     /// the upper half of the second register.
     #[inline(always)]
     pub fn concat_lo_hi(self, rhs: Self) -> Self {
-        self.shuffle2_imm_128::<0b10>(rhs)
+        self.permute2_imm_half::<0b10>(rhs)
     }
 
     /// Concatenates the upper half of the first register with
     /// the lower half of the second register.
     #[inline(always)]
     pub fn concat_hi_lo(self, rhs: Self) -> Self {
-        self.shuffle2_imm_128::<0b01>(rhs)
+        self.permute2_imm_half::<0b01>(rhs)
     }
 
     /// Concatenates the upper half of the first register with
     /// the upper half of the second register.
     #[inline(always)]
     pub fn concat_hi_hi(self, rhs: Self) -> Self {
-        self.shuffle2_imm_128::<0b11>(rhs)
+        self.permute2_imm_half::<0b11>(rhs)
     }
 }
 
