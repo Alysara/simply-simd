@@ -39,7 +39,7 @@ jobs:
         if: matrix.name == 'avx512'
         id: cpu
         run: |
-          if grep -qm1 avx512bw /proc/cpuinfo; then
+          if grep -qm1 avx512f /proc/cpuinfo; then
             echo "has_avx512=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_avx512=false" >> "$GITHUB_OUTPUT"
