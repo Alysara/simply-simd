@@ -872,24 +872,36 @@ impl SimdBlockShift for NeonReg {
     }
 }
 
-// TODO: Add to_bits for other bit sizes for NEON.
 impl SimdMaskBitConversion for NeonReg {
     #[inline(always)]
     unsafe fn to_bits_64(self) -> u64 {
-        0u64
+        let b = vshrq_n_u64::<63>(transmute(self.0));
+        vgetq_lane_u64::<0>(b) | (vgetq_lane_u64::<1>(b) << 1)
     }
+
     #[inline(always)]
     unsafe fn to_bits_32(self) -> u64 {
-        unsafe {
-            let single_bits = vshrq_n_u32::<31>(transmute(self.0));
-            let iota = vld1q_u32([0, 1, 2, 3].as_ptr());
-            let shifted = vshlq_u32(single_bits, transmute(iota));
-            vaddvq_u32(shifted).into()
-        }
+        const W: [u32; 4] = [1, 2, 4, 8];
+        let m: uint32x4_t = transmute(self.0);
+        vaddvq_u32(vandq_u32(m, vld1q_u32(W.as_ptr()))) as u64
     }
+
+    #[inline(always)]
+    unsafe fn to_bits_16(self) -> u64 {
+        const W: [u16; 8] = [1, 2, 4, 8, 16, 32, 64, 128];
+        let m: uint16x8_t = transmute(self.0);
+        vaddvq_u16(vandq_u16(m, vld1q_u16(W.as_ptr()))) as u64
+    }
+
     #[inline(always)]
     unsafe fn to_bits_8(self) -> u64 {
-        0u64
+        const W: [u8; 16] = [1, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128];
+        let m: uint8x16_t = transmute(self.0);
+        let mut t = vandq_u8(m, vld1q_u8(W.as_ptr()));
+        t = vpaddq_u8(t, t);
+        t = vpaddq_u8(t, t);
+        t = vpaddq_u8(t, t);
+        vgetq_lane_u16::<0>(vreinterpretq_u16_u8(t)) as u64
     }
 
     #[inline(always)]

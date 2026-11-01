@@ -923,15 +923,23 @@ impl SimdBlockShift for Avx2Reg {
 impl SimdMaskBitConversion for Avx2Reg {
     #[inline(always)]
     unsafe fn to_bits_64(self) -> u64 {
-        execute_intrinsic!(_mm256_movemask_pd, self) as u64
+        execute_intrinsic!(_mm256_movemask_pd, self) as u32 as u64
     }
     #[inline(always)]
     unsafe fn to_bits_32(self) -> u64 {
-        execute_intrinsic!(_mm256_movemask_ps, self) as u64
+        execute_intrinsic!(_mm256_movemask_ps, self) as u32 as u64
     }
     #[inline(always)]
     unsafe fn to_bits_8(self) -> u64 {
-        execute_intrinsic!(_mm256_movemask_epi8, self) as u64
+        execute_intrinsic!(_mm256_movemask_epi8, self) as u32 as u64
+    }
+    #[inline(always)]
+    unsafe fn to_bits_16(self) -> u64 {
+        unsafe {
+            let bits = self.to_bits_8() as u32;
+            _pext_u32(bits, 0xAAAA_AAAA) as u64
+            
+        }
     }
     #[inline(always)]
     unsafe fn from_bits_64(bitmask: u64) -> Self {

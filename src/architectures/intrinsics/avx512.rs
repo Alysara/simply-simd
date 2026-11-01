@@ -863,6 +863,10 @@ impl SimdMaskBitConversion for Avx512Mask {
         self.0
     }
     #[inline(always)]
+    unsafe fn to_bits_16(self) -> u64 {
+        self.0
+    }
+    #[inline(always)]
     unsafe fn to_bits_8(self) -> u64 {
         self.0
     }

@@ -1373,6 +1373,14 @@ impl<const N: usize> SimdMaskBitConversion for ScalarMask<N> {
         bits
     }
     #[inline(always)]
+    unsafe fn to_bits_16(self) -> u64 {
+        let mut bits = 0u64;
+        for i in 0..(N >> 1) {
+            bits ^= (self.0[i] as u64) << i
+        }
+        bits
+    }
+    #[inline(always)]
     unsafe fn to_bits_8(self) -> u64 {
         let mut bits = 0u64;
         for i in 0..N {

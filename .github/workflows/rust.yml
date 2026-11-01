@@ -21,9 +21,9 @@ jobs:
           - name: sse
             rustflags: "-C target-feature=+sse,+sse2,+sse3,+sse4.1,+sse4.2"
           - name: avx2
-            rustflags: "-C target-feature=+avx,+avx2,+fma"
+            rustflags: "-C target-feature=+avx,+avx2,+fma,+bmi2"
           - name: avx512
-            rustflags: "-C target-feature=+avx512f,+avx512bw,+avx512vl,+avx512dq"
+            rustflags: "-C target-feature=+avx512f,+avx512bw,+avx512vl,+avx512dq,+bmi2"
     steps:
       - uses: actions/checkout@v4
 

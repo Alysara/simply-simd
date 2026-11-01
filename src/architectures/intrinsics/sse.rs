@@ -867,15 +867,22 @@ impl SimdBlockShift for SseReg {
 impl SimdMaskBitConversion for SseReg {
     #[inline(always)]
     unsafe fn to_bits_64(self) -> u64 {
-        execute_intrinsic!(_mm_movemask_pd, self) as u64
+        execute_intrinsic!(_mm_movemask_pd, self) as u32 as u64
     }
     #[inline(always)]
     unsafe fn to_bits_32(self) -> u64 {
-        execute_intrinsic!(_mm_movemask_ps, self) as u64
+        execute_intrinsic!(_mm_movemask_ps, self) as u32 as u64
+    }
+    #[inline(always)]
+    unsafe fn to_bits_16(self) -> u64 {
+        unsafe {
+            let packed = Self(_mm_packs_epi16(self.0, _mm_setzero_si128()));
+            packed.to_bits_8()
+        }
     }
     #[inline(always)]
     unsafe fn to_bits_8(self) -> u64 {
-        execute_intrinsic!(_mm_movemask_epi8, self) as u64
+        execute_intrinsic!(_mm_movemask_epi8, self) as u32 as u64
     }
     #[inline(always)]
     unsafe fn from_bits_64(bitmask: u64) -> Self {

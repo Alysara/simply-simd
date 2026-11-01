@@ -10,13 +10,19 @@ cfg_select! {
         target_feature = "avx512bw",
         target_feature = "avx512vl",
         target_feature = "fma",
+        target_feature = "bmi2",
     ) => {
         use crate::architectures::arch::Avx512;
         pub type StaticSimd<T> = Simd<T, Avx512>;
         pub type StaticMask<T> = Mask<T, Avx512>;
         pub type StaticArch = Avx512;
     }
-    all(target_arch = "x86_64", target_feature = "avx2", target_feature = "fma") => {
+    all(
+        target_arch = "x86_64",
+        target_feature = "avx2",
+        target_feature = "fma",
+        target_feature = "bmi2",
+    ) => {
         use crate::architectures::arch::Avx2;
         pub type StaticSimd<T> = Simd<T, Avx2>;
         pub type StaticMask<T> = Mask<T, Avx2>;

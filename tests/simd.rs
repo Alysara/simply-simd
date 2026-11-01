@@ -83,8 +83,8 @@ simd_vec_tests!(blend_64_64_test_4, [[f64, f64 -> f64]], |x, y| {
     x.blend_64::<0b11>(y)
 });
 
-simd_vec_tests!(to_bits_test, [[f32, f32 -> f32]], |x, y| {
-    Simd::splat(x.simd_gt(y).to_bits() as f32)
+simd_vec_tests!(to_bits_test, [[f32, f32 -> u64], [u16, u16 -> u64], [u8, u8 -> u64], [f64, f64 -> u64]], |x, y| {
+    Simd::splat(x.simd_gt(y).to_bits())
 });
 
 // === Imm Permutes/Shuffles ===
@@ -219,31 +219,47 @@ simd_vec_tests!(shuffle_8_test, [[f32, u8 -> f32], [i32, u8 -> i32], [u64, u8 ->
 
 // === Interleaves ===
 
-simd_vec_tests!(interleave_lower_block_64_test, [f32, f64, u16, u32], |x, y| {
-    x.interleave_lower_block_64(y)
-});
-simd_vec_tests!(interleave_lower_block_32_test, [f32, f64, u16, u32], |x, y| {
-    x.interleave_lower_block_32(y)
-});
-simd_vec_tests!(interleave_lower_block_16_test, [f32, f64, u16, u32], |x, y| {
-    x.interleave_lower_block_16(y)
-});
-simd_vec_tests!(interleave_lower_block_8_test, [f32, f64, u16, u32], |x, y| {
-    x.interleave_lower_block_8(y)
-});
+simd_vec_tests!(
+    interleave_lower_block_64_test,
+    [f32, f64, u16, u32],
+    |x, y| { x.interleave_lower_block_64(y) }
+);
+simd_vec_tests!(
+    interleave_lower_block_32_test,
+    [f32, f64, u16, u32],
+    |x, y| { x.interleave_lower_block_32(y) }
+);
+simd_vec_tests!(
+    interleave_lower_block_16_test,
+    [f32, f64, u16, u32],
+    |x, y| { x.interleave_lower_block_16(y) }
+);
+simd_vec_tests!(
+    interleave_lower_block_8_test,
+    [f32, f64, u16, u32],
+    |x, y| { x.interleave_lower_block_8(y) }
+);
 
-simd_vec_tests!(interleave_upper_block_64_test, [f32, f64, u16, u32], |x, y| {
-    x.interleave_upper_block_64(y)
-});
-simd_vec_tests!(interleave_upper_block_32_test, [f32, f64, u16, u32], |x, y| {
-    x.interleave_upper_block_32(y)
-});
-simd_vec_tests!(interleave_upper_block_16_test, [f32, f64, u16, u32], |x, y| {
-    x.interleave_upper_block_16(y)
-});
-simd_vec_tests!(interleave_upper_block_8_test, [f32, f64, u16, u32], |x, y| {
-    x.interleave_upper_block_8(y)
-});
+simd_vec_tests!(
+    interleave_upper_block_64_test,
+    [f32, f64, u16, u32],
+    |x, y| { x.interleave_upper_block_64(y) }
+);
+simd_vec_tests!(
+    interleave_upper_block_32_test,
+    [f32, f64, u16, u32],
+    |x, y| { x.interleave_upper_block_32(y) }
+);
+simd_vec_tests!(
+    interleave_upper_block_16_test,
+    [f32, f64, u16, u32],
+    |x, y| { x.interleave_upper_block_16(y) }
+);
+simd_vec_tests!(
+    interleave_upper_block_8_test,
+    [f32, f64, u16, u32],
+    |x, y| { x.interleave_upper_block_8(y) }
+);
 
 simd_vec_tests!(interleave_lower_128_test, [f32, f64, u16, u32], |x, y| {
     x.interleave_lower_128(y)
@@ -355,11 +371,11 @@ simd_vec_tests!(gather_64_test, [[u64 -> f64]], |x| {
 // === Comparisons ===
 simd_vec_tests!(lt_test, [f32, f64], |x, y| { x.simd_lt(y).select(x, y) });
 simd_vec_tests!(le_test, [f32, f64], |x, y| { x.simd_le(y).select(x, y) });
-simd_vec_tests!(gt_test, [f32, f64, u32, u64, i32, i64], |x, y| {
+simd_vec_tests!(gt_test, [f32, f64, u32, u64, i32, i64, u16, i16, u8, i8], |x, y| {
     x.simd_gt(y).select(x, y)
 });
 simd_vec_tests!(ge_test, [f32, f64], |x, y| { x.simd_ge(y).select(x, y) });
-simd_vec_tests!(eq_test, [f32, f64, u32, u64, i32, i64], |x, y| {
+simd_vec_tests!(eq_test, [f32, f64, u32, u64, i32, i64, u16, i16, u8, i8], |x, y| {
     x.simd_eq(y).select(x, y)
 });
 simd_vec_tests!(neq_test, [f32, f64, u32, u64, i32, i64], |x, y| {

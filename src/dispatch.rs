@@ -23,7 +23,7 @@ pub enum Architecture {
 pub fn detect_architecture() -> Architecture {
     #[cfg(target_arch = "x86_64")]
     {
-        if is_x86_feature_detected!("fma") {
+        if is_x86_feature_detected!("fma") && is_x86_feature_detected!("bmi2") {
             if is_x86_feature_detected!("avx512f")
                 && is_x86_feature_detected!("avx512bw")
                 && is_x86_feature_detected!("avx512vl")

@@ -420,7 +420,7 @@ pub trait SimdBlockShift {
 pub trait SimdMaskBitConversion {
     unsafe fn to_bits_64(self) -> u64;
     unsafe fn to_bits_32(self) -> u64;
-    // unsafe fn to_bits_16(self) -> u64;
+    unsafe fn to_bits_16(self) -> u64;
     unsafe fn to_bits_8(self) -> u64;
     unsafe fn from_bits_64(bitmask: u64) -> Self;
     unsafe fn from_bits_32(bitmask: u64) -> Self;
