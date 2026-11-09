@@ -9,6 +9,7 @@ use crate::{Architecture, SimdElement, register::Simd, simd_array::SimdToArray};
 pub trait Arch: Clone + Copy + Default {
     const SIMD_WIDTH: usize;
     const NUM_SIMD_REG: usize;
+    const HAS_BMI2: bool;
     const ARCHITECTURE: Architecture;
 
     type Block2<T: SimdElement>: Deref<Target = [Simd<T, Self>]> + DerefMut + Default;

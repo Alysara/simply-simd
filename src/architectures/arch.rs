@@ -21,6 +21,7 @@ pub struct Sse;
 impl Arch for Sse {
     const SIMD_WIDTH: usize = 16;
     const NUM_SIMD_REG: usize = 16;
+    const HAS_BMI2: bool = false;
     const ARCHITECTURE: Architecture = Architecture::Sse;
     type Block2<T: SimdElement> = Block<Simd<T, Self>, 4>;
     type Block4<T: SimdElement> = Block<Simd<T, Self>, 2>;
@@ -42,6 +43,7 @@ pub struct Avx2;
 impl Arch for Avx2 {
     const SIMD_WIDTH: usize = 32;
     const NUM_SIMD_REG: usize = 16;
+    const HAS_BMI2: bool = true;
     const ARCHITECTURE: Architecture = Architecture::Avx2;
     type Block2<T: SimdElement> = Block<Simd<T, Self>, 4>;
     type Block4<T: SimdElement> = Block<Simd<T, Self>, 2>;
@@ -63,6 +65,7 @@ pub struct Avx512;
 impl Arch for Avx512 {
     const SIMD_WIDTH: usize = 64;
     const NUM_SIMD_REG: usize = 32;
+    const HAS_BMI2: bool = true;
     const ARCHITECTURE: Architecture = Architecture::Avx512;
     type Block2<T: SimdElement> = Block<Simd<T, Self>, 8>;
     type Block4<T: SimdElement> = Block<Simd<T, Self>, 4>;
@@ -84,6 +87,7 @@ pub struct Neon;
 impl Arch for Neon {
     const SIMD_WIDTH: usize = 16;
     const NUM_SIMD_REG: usize = 32;
+    const HAS_BMI2: bool = false;
     const ARCHITECTURE: Architecture = Architecture::Neon;
     type Block2<T: SimdElement> = Block<Simd<T, Self>, 8>;
     type Block4<T: SimdElement> = Block<Simd<T, Self>, 4>;
@@ -103,6 +107,7 @@ pub struct Scalar128;
 impl Arch for Scalar128 {
     const SIMD_WIDTH: usize = 16;
     const NUM_SIMD_REG: usize = 16;
+    const HAS_BMI2: bool = false;
     const ARCHITECTURE: Architecture = Architecture::Scalar128;
     type Block2<T: SimdElement> = Block<Simd<T, Self>, 4>;
     type Block4<T: SimdElement> = Block<Simd<T, Self>, 2>;
@@ -122,6 +127,7 @@ pub struct Scalar256;
 impl Arch for Scalar256 {
     const SIMD_WIDTH: usize = 32;
     const NUM_SIMD_REG: usize = 16;
+    const HAS_BMI2: bool = false;
     const ARCHITECTURE: Architecture = Architecture::Scalar128;
     type Block2<T: SimdElement> = Block<Simd<T, Self>, 4>;
     type Block4<T: SimdElement> = Block<Simd<T, Self>, 2>;
@@ -141,6 +147,7 @@ pub struct Scalar512;
 impl Arch for Scalar512 {
     const SIMD_WIDTH: usize = 64;
     const NUM_SIMD_REG: usize = 16;
+    const HAS_BMI2: bool = false;
     const ARCHITECTURE: Architecture = Architecture::Scalar128;
     type Block2<T: SimdElement> = Block<Simd<T, Self>, 4>;
     type Block4<T: SimdElement> = Block<Simd<T, Self>, 2>;
