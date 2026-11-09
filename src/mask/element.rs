@@ -39,6 +39,20 @@ impl<T: SimdElement, A: Arch> Mask<T, A> {
         let n_vec = Simd::splat(n);
         iota.simd_gt(n_vec).raw_cast()
     }
+
+    #[inline(always)]
+    pub fn to_simd(self) -> Simd<T::UType, A> {
+        unsafe {
+            let reg = match T::BIT_SIZE {
+                BitSize::Size64 => self.data.to_simd_64(),
+                BitSize::Size32 => self.data.to_simd_32(),
+                BitSize::Size16 => self.data.to_simd_16(),
+                BitSize::Size8 => self.data.to_simd_8(),
+            };
+
+            Simd::new(reg)
+        }
+    }
 }
 
 impl<T: SimdElement, A: Arch> BitAnd for Mask<T, A> {

@@ -160,7 +160,6 @@ impl SimdShift for Avx2Reg {
         }
     }
 
-
     #[inline(always)]
     unsafe fn srav_64(self, shift: Self) -> Self {
         unsafe {
@@ -938,7 +937,6 @@ impl SimdMaskBitConversion for Avx2Reg {
         unsafe {
             let bits = self.to_bits_8() as u32;
             _pext_u32(bits, 0xAAAA_AAAA) as u64
-            
         }
     }
     #[inline(always)]
@@ -982,6 +980,14 @@ impl SimdMaskBitConversion for Avx2Reg {
         );
         unsafe { self_from_op!(_mm256_cmpeq_epi8, bits.and(mask), Self::zero()).not() }
     }
+}
+
+impl SimdMaskConversion for Avx2Reg {
+    type VecType = Self;
+    map_transmute!(to_simd_64);
+    map_transmute!(to_simd_32);
+    map_transmute!(to_simd_16);
+    map_transmute!(to_simd_8);
 }
 
 impl SimdLaneShift for Avx2Reg {

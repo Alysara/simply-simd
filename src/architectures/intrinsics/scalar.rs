@@ -1419,6 +1419,26 @@ impl<const N: usize> SimdMaskBitConversion for ScalarMask<N> {
     }
 }
 
+macro_rules! map_scalar_mask_conversion {
+    ($func:ident, $shift:expr) => {
+        unsafe fn $func(self) -> Self::VecType {
+            let mut new = unsafe { ScalarReg::zero() };
+            for i in 0..N {
+                new.0[i] = self.0[i >> $shift] as u8 * !0;
+            }
+            new
+        }
+    }
+}
+
+impl<const N: usize> SimdMaskConversion for ScalarMask<N> {
+    type VecType = ScalarReg<N>;
+    map_scalar_mask_conversion!(to_simd_64, 3);
+    map_scalar_mask_conversion!(to_simd_32, 2);
+    map_scalar_mask_conversion!(to_simd_16, 1);
+    map_scalar_mask_conversion!(to_simd_8, 0);
+}
+
 impl<const M: usize> SimdLaneShift for ScalarReg<M> {
     #[inline(always)]
     unsafe fn left_lane_shift_32(self, n: u32) -> Self {

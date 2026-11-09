@@ -864,6 +864,15 @@ impl SimdBlockShift for SseReg {
     }
 }
 
+impl SimdMaskConversion for SseReg {
+    type VecType = Self;
+    map_transmute!(to_simd_64);
+    map_transmute!(to_simd_32);
+    map_transmute!(to_simd_16);
+    map_transmute!(to_simd_8);
+}
+
+
 impl SimdMaskBitConversion for SseReg {
     #[inline(always)]
     unsafe fn to_bits_64(self) -> u64 {

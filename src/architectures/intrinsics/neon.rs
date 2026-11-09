@@ -875,47 +875,59 @@ impl SimdBlockShift for NeonReg {
 impl SimdMaskBitConversion for NeonReg {
     #[inline(always)]
     unsafe fn to_bits_64(self) -> u64 {
-        let b = vshrq_n_u64::<63>(transmute(self.0));
-        vgetq_lane_u64::<0>(b) | (vgetq_lane_u64::<1>(b) << 1)
+        unsafe {
+            let b = vshrq_n_u64::<63>(transmute(self.0));
+            vgetq_lane_u64::<0>(b) | (vgetq_lane_u64::<1>(b) << 1)
+        }
     }
 
     #[inline(always)]
     unsafe fn to_bits_32(self) -> u64 {
         const W: [u32; 4] = [1, 2, 4, 8];
-        let m: uint32x4_t = transmute(self.0);
-        vaddvq_u32(vandq_u32(m, vld1q_u32(W.as_ptr()))) as u64
+        unsafe {
+            let m: uint32x4_t = transmute(self.0);
+            vaddvq_u32(vandq_u32(m, vld1q_u32(W.as_ptr()))) as u64
+        }
     }
 
     #[inline(always)]
     unsafe fn to_bits_16(self) -> u64 {
         const W: [u16; 8] = [1, 2, 4, 8, 16, 32, 64, 128];
-        let m: uint16x8_t = transmute(self.0);
-        vaddvq_u16(vandq_u16(m, vld1q_u16(W.as_ptr()))) as u64
+        unsafe {
+            let m: uint16x8_t = transmute(self.0);
+            vaddvq_u16(vandq_u16(m, vld1q_u16(W.as_ptr()))) as u64
+        }
     }
 
     #[inline(always)]
     unsafe fn to_bits_8(self) -> u64 {
         const W: [u8; 16] = [1, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128];
-        let m: uint8x16_t = transmute(self.0);
-        let mut t = vandq_u8(m, vld1q_u8(W.as_ptr()));
-        t = vpaddq_u8(t, t);
-        t = vpaddq_u8(t, t);
-        t = vpaddq_u8(t, t);
-        vgetq_lane_u16::<0>(vreinterpretq_u16_u8(t)) as u64
+        unsafe {
+            let m: uint8x16_t = transmute(self.0);
+            let mut t = vandq_u8(m, vld1q_u8(W.as_ptr()));
+            t = vpaddq_u8(t, t);
+            t = vpaddq_u8(t, t);
+            t = vpaddq_u8(t, t);
+            vgetq_lane_u16::<0>(vreinterpretq_u16_u8(t)) as u64
+        }
     }
 
     #[inline(always)]
     unsafe fn from_bits_64(bitmask: u64) -> Self {
-        let mask: Self = unsafe { Self(transmute([1u64, 2u64])) };
-        let bits = self_from_op!(vdupq_n_u64, bitmask);
-        self_from_op!(vtstq_u64, bits, mask)
+        unsafe {
+            let mask: Self = unsafe { Self(transmute([1u64, 2u64])) };
+            let bits = self_from_op!(vdupq_n_u64, bitmask);
+            self_from_op!(vtstq_u64, bits, mask)
+        }
     }
 
     #[inline(always)]
     unsafe fn from_bits_32(bitmask: u64) -> Self {
-        let mask: Self = unsafe { Self(transmute([1u32, 2u32, 4u32, 8u32])) };
-        let bits = self_from_op!(vdupq_n_u32, bitmask as u32);
-        self_from_op!(vtstq_u32, bits, mask)
+        unsafe {
+            let mask: Self = unsafe { Self(transmute([1u32, 2u32, 4u32, 8u32])) };
+            let bits = self_from_op!(vdupq_n_u32, bitmask as u32);
+            self_from_op!(vtstq_u32, bits, mask)
+        }
     }
 
     #[inline(always)]
@@ -946,6 +958,14 @@ impl SimdMaskBitConversion for NeonReg {
         };
         self_from_op!(vtstq_u8, bits, mask)
     }
+}
+
+impl SimdMaskConversion for NeonReg {
+    type VecType = Self;
+    map_transmute!(to_simd_64);
+    map_transmute!(to_simd_32);
+    map_transmute!(to_simd_16);
+    map_transmute!(to_simd_8);
 }
 
 impl SimdLaneShift for NeonReg {

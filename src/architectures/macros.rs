@@ -107,6 +107,15 @@ macro_rules! map_x86_conversion_imm_shift {
     }
 }
 
+#[macro_export]
+macro_rules! map_transmute {
+    ($func:ident) => {
+        #[inline(always)]
+        unsafe fn $func(self) -> Self {
+            unsafe { transmute(self) }
+        }
+    };
+}
 
 pub use crate::execute_intrinsic;
 // pub use crate::execute_intrinsic_copy;
@@ -118,3 +127,4 @@ pub use crate::self_from_const2_op;
 pub use crate::map_intrinsic;
 pub use crate::map_x86_shift;
 pub use crate::map_x86_conversion_imm_shift;
+pub use crate::map_transmute;

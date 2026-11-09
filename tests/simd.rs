@@ -87,6 +87,10 @@ simd_vec_tests!(to_bits_test, [[f32, f32 -> u64], [u16, u16 -> u64], [u8, u8 -> 
     Simd::splat(x.simd_gt(y).to_bits())
 });
 
+simd_vec_tests!(to_simd_test, [u8, u16, u32, u64], |x, y| {
+    x.simd_gt(y).to_simd()
+});
+
 // === Imm Permutes/Shuffles ===
 
 simd_vec_tests!(permute_imm_128_test_1, [f32, f64, u16, u32], |x| {

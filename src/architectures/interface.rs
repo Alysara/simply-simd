@@ -21,7 +21,11 @@ pub trait Arch: Clone + Copy + Default {
         + SimdLoad<MaskType = Self::Mask>
         + SimdStore<MaskType = Self::Mask>
         + SimdPartialOrd<MaskType = Self::Mask>;
-    type Mask: MaskArch + Copy + Clone + SimdVariableBlend<VecType = Self::Vec>;
+    type Mask: MaskArch
+        + Copy
+        + Clone
+        + SimdVariableBlend<VecType = Self::Vec>
+        + SimdMaskConversion<VecType = Self::Vec>;
     type ScalarArch: Arch;
 
     type Array64<T: Debug + Copy>: Debug + Copy + SimdToArray<T>;
@@ -60,7 +64,13 @@ pub trait SimdArch:
 }
 
 pub trait MaskArch:
-    Copy + Clone + SimdBitwise + SimdAllBits + SimdVariableBlend + SimdMaskBitConversion
+    Copy
+    + Clone
+    + SimdBitwise
+    + SimdAllBits
+    + SimdVariableBlend
+    + SimdMaskBitConversion
+    + SimdMaskConversion
 {
 }
 
@@ -426,6 +436,14 @@ pub trait SimdMaskBitConversion {
     unsafe fn from_bits_32(bitmask: u64) -> Self;
     unsafe fn from_bits_16(bitmask: u64) -> Self;
     unsafe fn from_bits_8(bitmask: u64) -> Self;
+}
+
+pub trait SimdMaskConversion {
+    type VecType;
+    unsafe fn to_simd_64(self) -> Self::VecType;
+    unsafe fn to_simd_32(self) -> Self::VecType;
+    unsafe fn to_simd_16(self) -> Self::VecType;
+    unsafe fn to_simd_8(self) -> Self::VecType;
 }
 
 pub trait SimdLaneShift {

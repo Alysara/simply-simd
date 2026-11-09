@@ -888,6 +888,26 @@ impl SimdMaskBitConversion for Avx512Mask {
     }
 }
 
+impl SimdMaskConversion for Avx512Mask {
+    type VecType = Avx512Reg;
+    #[inline(always)]
+    unsafe fn to_simd_64(self) -> Avx512Reg {
+        Avx512Reg(execute_intrinsic!(_mm512_movm_epi64, self))
+    }
+    #[inline(always)]
+    unsafe fn to_simd_32(self) -> Avx512Reg {
+        Avx512Reg(execute_intrinsic!(_mm512_movm_epi32, self))
+    }
+    #[inline(always)]
+    unsafe fn to_simd_16(self) -> Avx512Reg {
+        Avx512Reg(execute_intrinsic!(_mm512_movm_epi16, self))
+    }
+    #[inline(always)]
+    unsafe fn to_simd_8(self) -> Avx512Reg {
+        Avx512Reg(execute_intrinsic!(_mm512_movm_epi8, self))
+    }
+}
+
 impl SimdLaneShift for Avx512Reg {
     #[inline(always)]
     unsafe fn right_lane_shift_32(self, n: u32) -> Self {
