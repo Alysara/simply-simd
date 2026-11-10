@@ -872,7 +872,6 @@ impl SimdMaskConversion for SseReg {
     map_transmute!(to_simd_8);
 }
 
-
 impl SimdMaskBitConversion for SseReg {
     #[inline(always)]
     unsafe fn to_bits_64(self) -> u64 {
@@ -914,19 +913,13 @@ impl SimdMaskBitConversion for SseReg {
     }
     #[inline(always)]
     unsafe fn from_bits_8(bitmask: u64) -> Self {
-        let b1 = bitmask as i8;
-        let b2 = (bitmask >> 8) as i8;
-        #[rustfmt::skip]
-        let mask = self_from_op!(_mm_setr_epi8,
-            1, 2, 4, 8, 16, 32, 64, -128,
-            1, 2, 4, 8, 16, 32, 64, -128
-        );
-        #[rustfmt::skip]
-        let bits = self_from_op!(_mm_setr_epi8,
-            b1, b1, b1, b1, b1, b1, b1, b1,
-            b2, b2, b2, b2, b2, b2, b2, b2
-        );
-        unsafe { self_from_op!(_mm_cmpeq_epi8, bits.and(mask), Self::zero()).not() }
+        unsafe {
+            let shuf = _mm_setr_epi8(0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1);
+            let bit = _mm_set1_epi64x(0x8040201008040201u64 as i64);
+            let v = _mm_cvtsi32_si128(bitmask as u16 as i32); // movd, low 2 bytes matter
+            let bytes = _mm_shuffle_epi8(v, shuf); // needs SSSE3
+            self_from_op!(_mm_cmpeq_epi8, _mm_and_si128(bytes, bit), bit)
+        }
     }
 }
 

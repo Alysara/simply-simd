@@ -960,25 +960,17 @@ impl SimdMaskBitConversion for Avx2Reg {
     }
     #[inline(always)]
     unsafe fn from_bits_8(bitmask: u64) -> Self {
-        let b1 = bitmask as i8;
-        let b2 = (bitmask >> 8) as i8;
-        let b3 = (bitmask >> 16) as i8;
-        let b4 = (bitmask >> 24) as i8;
-        #[rustfmt::skip]
-        let mask = self_from_op!(_mm256_setr_epi8,
-            1, 2, 4, 8, 16, 32, 64, -128,
-            1, 2, 4, 8, 16, 32, 64, -128,
-            1, 2, 4, 8, 16, 32, 64, -128,
-            1, 2, 4, 8, 16, 32, 64, -128
-        );
-        #[rustfmt::skip]
-        let bits = self_from_op!(_mm256_setr_epi8,
-            b1, b1, b1, b1, b1, b1, b1, b1,
-            b2, b2, b2, b2, b2, b2, b2, b2,
-            b3, b3, b3, b3, b3, b3, b3, b3,
-            b4, b4, b4, b4, b4, b4, b4, b4
-        );
-        unsafe { self_from_op!(_mm256_cmpeq_epi8, bits.and(mask), Self::zero()).not() }
+        unsafe {
+            #[rustfmt::skip]
+            let shuf = _mm256_setr_epi8(
+                0,0,0,0,0,0,0,0,  1,1,1,1,1,1,1,1,
+                2,2,2,2,2,2,2,2,  3,3,3,3,3,3,3,3,
+            );
+            let bit = _mm256_set1_epi64x(0x8040201008040201u64 as i64);
+            let v = _mm256_set1_epi32(bitmask as u32 as i32);
+            let bytes = _mm256_shuffle_epi8(v, shuf);
+            self_from_op!(_mm256_cmpeq_epi8, _mm256_and_si256(bytes, bit), bit)
+        }
     }
 }
 
