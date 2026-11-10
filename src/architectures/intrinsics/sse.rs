@@ -895,20 +895,20 @@ impl SimdMaskBitConversion for SseReg {
     }
     #[inline(always)]
     unsafe fn from_bits_64(bitmask: u64) -> Self {
-        let mask = self_from_op!(_mm_set_epi64x, 1, 2);
+        let mask = self_from_op!(_mm_set_epi64x, 2, 2);
         let bits = self_from_op!(_mm_set1_epi64x, bitmask as i64);
         self_from_op!(_mm_cmpgt_epi64, bits.and(mask), Self::zero()) //TODO: only sse4.2?
     }
     #[inline(always)]
     unsafe fn from_bits_32(bitmask: u64) -> Self {
-        let mask = self_from_op!(_mm_set_epi32, 1, 2, 4, 8);
+        let mask = self_from_op!(_mm_setr_epi32, 1, 2, 4, 8);
         let bits = self_from_op!(_mm_set1_epi32, bitmask as u32);
         self_from_op!(_mm_cmpgt_epi32, bits.and(mask), Self::zero())
     }
     #[inline(always)]
     unsafe fn from_bits_16(bitmask: u64) -> Self {
         #[rustfmt::skip]
-        let mask = self_from_op!(_mm_set_epi16, 1, 2, 4, 8, 16, 32, 64, 128);
+        let mask = self_from_op!(_mm_setr_epi16, 1, 2, 4, 8, 16, 32, 64, 128);
         let bits = self_from_op!(_mm_set1_epi16, bitmask as i16);
         unsafe { self_from_op!(_mm_cmpeq_epi16, bits.and(mask), Self::zero()).not() }
     }
@@ -917,12 +917,12 @@ impl SimdMaskBitConversion for SseReg {
         let b1 = bitmask as i8;
         let b2 = (bitmask >> 8) as i8;
         #[rustfmt::skip]
-        let mask = self_from_op!(_mm_set_epi8,
+        let mask = self_from_op!(_mm_setr_epi8,
             1, 2, 4, 8, 16, 32, 64, -128,
             1, 2, 4, 8, 16, 32, 64, -128
         );
         #[rustfmt::skip]
-        let bits = self_from_op!(_mm_set_epi8,
+        let bits = self_from_op!(_mm_setr_epi8,
             b1, b1, b1, b1, b1, b1, b1, b1,
             b2, b2, b2, b2, b2, b2, b2, b2
         );
